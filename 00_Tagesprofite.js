@@ -617,15 +617,12 @@ function bbp2BuildEkIndex_(table) {
 }
 
 function bbp2BuildFixedEkIndex_(table) {
-  const defaults = {
-    PS4_CONTROLLER: 15,
-    PS5_CONTROLLER: 27,
-    XBOX_ONE_CONTROLLER: 15,
-    XBOX_SERIES_CONTROLLER: 20,
-    NINTENDO_CONTROLLER: 20
-  };
-
-  const result = { ...defaults };
+  // Kein Code-Fallback: Fest-EK-Werte kommen ausschließlich aus aktiven
+  // CONTROLLER_EK/ZUBEHOER_EK-Zeilen in EK_Regeln. Fehlt eine Zeile,
+  // bleibt der Schlüssel unbesetzt und der Aufrufer markiert den
+  // Verkauf als Prüffall (FEST_EK_REGEL_FEHLT), statt einen
+  // möglicherweise veralteten Wert stillschweigend zu verwenden.
+  const result = {};
 
   table.rows.forEach(row => {
     const ruleType = bbp2GetTextByAliases_(row, table.headerMap, [

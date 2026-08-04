@@ -317,6 +317,18 @@ function ekNormalizeSourceSheet_(
   );
 
 /*
+ * Dieselbe Kanonisierung wie auf der Verkaufsseite anwenden,
+ * damit Schreibweisen (römische Ziffern, V-Suffix, Alias-Tabelle
+ * für Modellcodes) auf beiden Seiten übereinstimmen und der
+ * Abgleich über den Modellschlüssel funktioniert.
+ */
+modelKey =
+  salesCanonicalizeModelKey_(
+    modelKey,
+    category
+  );
+
+/*
  * Nur auf der Einkaufsseite werden fehlende Kapazitäten
  * mit den Unternehmensstandards ergänzt.
  */
@@ -378,6 +390,12 @@ modelKey =
         reviewReasons.push(
           'CONTROLLER_TYP_UNKLAR'
         );
+      } else if (
+        packageAnalysis.controllerPriceMissing
+      ) {
+        reviewReasons.push(
+          'CONTROLLER_EK_REGEL_FEHLT'
+        );
       }
 
       let adjustedMainProductPrice = '';
@@ -386,7 +404,8 @@ modelKey =
         totalPrice !== null &&
         !packageAnalysis.hasMixedMainProducts &&
         !packageAnalysis.requiresAccessoryReview &&
-        packageAnalysis.controllerType !== 'UNBEKANNT'
+        packageAnalysis.controllerType !== 'UNBEKANNT' &&
+        !packageAnalysis.controllerPriceMissing
       ) {
         adjustedMainProductPrice =
           Math.max(
@@ -496,6 +515,7 @@ function ekAnalyzePackage_(
     controllerCount: 0,
     controllerType: '',
     controllerDeduction: 0,
+    controllerPriceMissing: false,
     zeroValueAccessories: [],
     requiresAccessoryReview: false,
     accessoryReviewReason: '',
@@ -701,6 +721,9 @@ if (
   result.controllerDeduction =
     controllerInfo.deduction;
 
+  result.controllerPriceMissing =
+    controllerInfo.priceMissing || false;
+
   return result;
 }
 
@@ -743,111 +766,71 @@ function ekDetectControllers_(
   /*
    * Nintendo Joy-Cons oder Pro Controller.
    */
+  let type = '';
+
   if (
     /\bjoy[\s-]?con(?:s)?\b/.test(
       normalizedName
+    ) ||
+    (
+      /\bpro controller\b/.test(normalizedName) &&
+      category === 'Nintendo'
     )
   ) {
     count = count || 1;
-
-    return {
-      count,
-      type: 'NINTENDO_CONTROLLER',
-      deduction:
-        count *
-        rules.controllerPrices.NINTENDO_CONTROLLER
-    };
-  }
-
-  if (
-    /\bpro controller\b/.test(
-      normalizedName
-    ) &&
-    category === 'Nintendo'
-  ) {
-    count = count || 1;
-
-    return {
-      count,
-      type: 'NINTENDO_CONTROLLER',
-      deduction:
-        count *
-        rules.controllerPrices.NINTENDO_CONTROLLER
-    };
-  }
-
-  if (count === 0) {
+    type = 'NINTENDO_CONTROLLER';
+  } else if (count === 0) {
     return {
       count: 0,
       type: '',
       deduction: 0
     };
-  }
-
-  if (
-    category === 'PS4'
-  ) {
-    return {
-      count,
-      type: 'PS4_CONTROLLER',
-      deduction:
-        count *
-        rules.controllerPrices.PS4_CONTROLLER
-    };
-  }
-
-  if (
-    category === 'PS5'
-  ) {
-    return {
-      count,
-      type: 'PS5_CONTROLLER',
-      deduction:
-        count *
-        rules.controllerPrices.PS5_CONTROLLER
-    };
-  }
-
-  if (
-    category === 'XBOX'
-  ) {
+  } else if (category === 'PS4') {
+    type = 'PS4_CONTROLLER';
+  } else if (category === 'PS5') {
+    type = 'PS5_CONTROLLER';
+  } else if (category === 'XBOX') {
     const isSeries =
       /\bseries\s+[sx]\b/.test(
         normalizedName
       );
 
-    const controllerType =
+    type =
       isSeries
         ? 'XBOX_SERIES_CONTROLLER'
         : 'XBOX_ONE_CONTROLLER';
-
+  } else if (category === 'Nintendo') {
+    type = 'NINTENDO_CONTROLLER';
+  } else {
     return {
       count,
-      type: controllerType,
-      deduction:
-        count *
-        rules.controllerPrices[
-          controllerType
-        ]
+      type: 'UNBEKANNT',
+      deduction: 0
     };
   }
 
-  if (
-    category === 'Nintendo'
-  ) {
+  /*
+   * Der Fest-EK kommt ausschließlich aus EK_Regeln. Fehlt dort eine
+   * aktive Zeile für diesen Controller-Typ, wird kein Wert erraten
+   * oder mit einem abweichenden Code-Fallback verrechnet, sondern
+   * ein Prüffall ausgelöst (siehe CONTROLLER_EK_REGEL_FEHLT).
+   */
+  const price =
+    rules.controllerPrices[type];
+
+  if (price === undefined) {
     return {
       count,
-      type: 'NINTENDO_CONTROLLER',
-      deduction:
-        count *
-        rules.controllerPrices.NINTENDO_CONTROLLER
+      type,
+      deduction: 0,
+      priceMissing: true
     };
   }
 
   return {
     count,
-    type: 'UNBEKANNT',
-    deduction: 0
+    type,
+    deduction: count * price
   };
 }
 

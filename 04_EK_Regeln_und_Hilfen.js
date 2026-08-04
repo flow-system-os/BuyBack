@@ -68,7 +68,7 @@ function ekInitializeRuleSheet_(
         'PS5_CONTROLLER',
         'CONTROLLER_EK',
         'PS5_CONTROLLER',
-        25,
+        27,
         'EUR',
         10,
         'JA',
@@ -78,7 +78,7 @@ function ekInitializeRuleSheet_(
         'XBOX_ONE_CONTROLLER',
         'CONTROLLER_EK',
         'XBOX_ONE_CONTROLLER',
-        25,
+        15,
         'EUR',
         10,
         'JA',
@@ -88,7 +88,7 @@ function ekInitializeRuleSheet_(
         'XBOX_SERIES_CONTROLLER',
         'CONTROLLER_EK',
         'XBOX_SERIES_CONTROLLER',
-        25,
+        20,
         'EUR',
         10,
         'JA',
@@ -98,7 +98,7 @@ function ekInitializeRuleSheet_(
         'NINTENDO_CONTROLLER',
         'CONTROLLER_EK',
         'NINTENDO_CONTROLLER',
-        25,
+        20,
         'EUR',
         10,
         'JA',
@@ -213,14 +213,6 @@ function ekInitializeRuleSheet_(
  */
 
 function ekLoadRules_(rulesSheet) {
-  const defaultControllerPrices = {
-    PS4_CONTROLLER: 15,
-    PS5_CONTROLLER: 27,
-    XBOX_ONE_CONTROLLER: 15,
-    XBOX_SERIES_CONTROLLER: 20,
-    NINTENDO_CONTROLLER: 20
-  };
-
   const defaultStorage = {
     PHONE: 128,
     TABLET: 64,
@@ -229,9 +221,15 @@ function ekLoadRules_(rulesSheet) {
     XBOX_ONE: 500
   };
 
+  /*
+   * Controller-Festpreise haben keinen Code-Fallback mehr.
+   * Einzige Quelle ist eine aktive CONTROLLER_EK-Zeile in EK_Regeln;
+   * fehlt sie, bleibt der Schlüssel unbesetzt und der Aufrufer löst
+   * dafür einen Prüffall aus, statt mit einem geratenen Wert weiterzurechnen.
+   */
   if (rulesSheet.getLastRow() < 2) {
     return {
-      controllerPrices: defaultControllerPrices,
+      controllerPrices: {},
       defaultStorage: defaultStorage
     };
   }
@@ -245,9 +243,7 @@ function ekLoadRules_(rulesSheet) {
     )
     .getDisplayValues();
 
-  const controllerPrices = {
-    ...defaultControllerPrices
-  };
+  const controllerPrices = {};
 
   const loadedDefaultStorage = {
     ...defaultStorage
@@ -269,10 +265,7 @@ function ekLoadRules_(rulesSheet) {
 
     if (
       ruleType === 'CONTROLLER_EK' &&
-      Object.prototype.hasOwnProperty.call(
-        controllerPrices,
-        key
-      )
+      key
     ) {
       const price =
         ekParseMoney_(row[3]);
