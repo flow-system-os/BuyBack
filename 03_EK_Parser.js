@@ -632,6 +632,33 @@ if (
    * ==========================================================
    */
 
+  /*
+   * "Xbox One Series S/X" ist ein verbreiteter Tippfehler für
+   * "Xbox Series S/X" (die "One"-Generation hat diese Modelle nie
+   * gegeben). Muss vor der generischen "xbox one"-Prüfung stehen,
+   * sonst greift diese zuerst und liefert die falsche Konsolen-
+   * Generation (XBOX ONE statt XBOX SERIES S/X).
+   */
+  if (
+    /\bxbox one series x\b/.test(
+      searchName
+    )
+  ) {
+    return 'XBOX SERIES X 1TB';
+  }
+
+  if (
+    /\bxbox one series s\b/.test(
+      searchName
+    )
+  ) {
+    return ekAppendStorageWithDefault_(
+      'XBOX SERIES S',
+      searchName,
+      '512GB'
+    );
+  }
+
   if (
     /\bxbox series x\b/.test(
       searchName
@@ -812,9 +839,23 @@ if (samsungTabletMatch) {
     return (sonyRxMatch[1] || sonyRxMatch[2]).toUpperCase();
   }
 
+  /*
+   * "Sony Alpha 5000" hat keine eigene Kurzform im Text (anders als
+   * z. B. "a5000"), fällt deshalb ohne diese Regel durch bis zum
+   * Objektiv-Brennweiten-Fallback weiter unten und liefert dann
+   * fälschlich das Objektiv statt der Kamera als Schlüssel.
+   */
+  const sonyAlphaMatch = searchName.match(
+    /\b(?:sony\s+)?alpha\s*(\d{4})\b/
+  );
+
+  if (sonyAlphaMatch) {
+    return `ALPHA ${sonyAlphaMatch[1]}`;
+  }
+
     const cameraPatterns = [
       /\bdsc[\s-]?[a-z]{0,3}\d{1,4}\b/,
-/\bhx\d{1,4}\b/,
+/\bhx[\s-]?\d{1,4}\b/,
     /\bsx\d{2,4}\b/,
     /\bsz\d{1,3}\b/,
     /\btz\d{1,3}\b/,
@@ -832,8 +873,12 @@ if (samsungTabletMatch) {
     /\blumix\s+[a-z]{1,3}\d{1,4}\b/
   ];
 
+  /*
+   * [\s-]* statt \s* erlaubt auch "DSC HX-5" (Bindestrich statt
+   * Leerzeichen zwischen "hx" und der Modellnummer).
+   */
   const sonyHxMatch = searchName.match(
-  /\bsony(?:\s+dsc)?\s+hx\s*(\d{1,4})\b/
+  /\bsony(?:\s+dsc)?\s+hx[\s-]*(\d{1,4})\b/
 );
 
 if (sonyHxMatch) {
@@ -1199,7 +1244,15 @@ function ekRemoveColorWords_(value) {
     'bordeaux',
     'tuerkis',
     'türkis',
-    'anthrazit'
+    'anthrazit',
+    // Fremdsprachige Farbwörter aus echten Prüffällen (Annika, 2026-08-03):
+    'blanco', // Spanisch: weiß
+    'valkoinen', // Finnisch: weiß
+    'wit', // Niederländisch: weiß
+    'zilver', // Niederländisch: silber
+    'blanc', // Französisch: weiß
+    'argent', // Französisch: silber
+    'noir' // Französisch: schwarz
   ];
 
   let result =

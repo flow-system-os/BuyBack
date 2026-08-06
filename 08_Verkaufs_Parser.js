@@ -394,10 +394,11 @@ function salesCanonicalizeCameraModelKey_(modelKey) {
    * gemeinsame Preisgruppe geführt. Andere Suffixe bleiben erhalten.
    */
   match = key.match(
-    /(?:^|\b)(?:SONY\s+)?(?:CYBER[\s-]?SHOT\s+)?(?:DSC[\s-]*)?((?:HX|WX|RX|H|W)\d+[A-Z]?)(?:\b|$)/
+    /(?:^|\b)(?:SONY\s+)?(?:CYBER[\s-]?SHOT\s+)?(?:DSC[\s-]*)?((?:HX|WX|RX|H|W)[\s-]?\d+[A-Z]?)(?:\b|$)/
   );
   if (match) {
     return match[1]
+      .replace(/[\s-]/g, '')
       .replace(/^HX400V$/, 'HX400')
       .replace(/^HX20V$/, 'HX20');
   }
@@ -420,7 +421,17 @@ function salesCanonicalizeCameraModelKey_(modelKey) {
       /^(?:SX|S|A)\d+(?:\s*HS)?$/.test(key)
     )
   ) {
-    return match[1].replace(/\s+/g, '');
+    /*
+     * Der "HS"-Zusatz (z. B. "SX240HS") wird bewusst entfernt:
+     * Einkaufstabelle schreibt oft nur "SX240 HS" mit Leerzeichen,
+     * wodurch die Modellschlüssel-Erkennung dort schon vor der
+     * Kanonisierung nur "SX240" liefert. Ohne dieses Kürzen würden
+     * EK- und Verkaufsseite dauerhaft auf unterschiedlichen
+     * Schlüsseln (SX240 vs. SX240HS) landen.
+     */
+    return match[1]
+      .replace(/\s+/g, '')
+      .replace(/HS$/, '');
   }
 
   if (
