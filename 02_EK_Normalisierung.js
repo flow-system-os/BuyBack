@@ -396,6 +396,12 @@ modelKey =
         reviewReasons.push(
           'CONTROLLER_EK_REGEL_FEHLT'
         );
+      } else if (
+        packageAnalysis.controllerWithoutMainDevice
+      ) {
+        reviewReasons.push(
+          'CONTROLLER_OHNE_HAUPTGERAET'
+        );
       }
 
       let adjustedMainProductPrice = '';
@@ -405,7 +411,8 @@ modelKey =
         !packageAnalysis.hasMixedMainProducts &&
         !packageAnalysis.requiresAccessoryReview &&
         packageAnalysis.controllerType !== 'UNBEKANNT' &&
-        !packageAnalysis.controllerPriceMissing
+        !packageAnalysis.controllerPriceMissing &&
+        !packageAnalysis.controllerWithoutMainDevice
       ) {
         adjustedMainProductPrice =
           Math.max(
@@ -516,6 +523,7 @@ function ekAnalyzePackage_(
     controllerType: '',
     controllerDeduction: 0,
     controllerPriceMissing: false,
+    controllerWithoutMainDevice: false,
     zeroValueAccessories: [],
     requiresAccessoryReview: false,
     accessoryReviewReason: '',
@@ -724,6 +732,9 @@ if (
   result.controllerPriceMissing =
     controllerInfo.priceMissing || false;
 
+  result.controllerWithoutMainDevice =
+    controllerInfo.withoutMainDevice || false;
+
   return result;
 }
 
@@ -806,6 +817,39 @@ function ekDetectControllers_(
       count,
       type: 'UNBEKANNT',
       deduction: 0
+    };
+  }
+
+  /*
+   * "ps4 controller rot" ist ein reiner Controller-Kauf ohne Konsole,
+   * kein Bundle. Ohne dieses Konsolen-Merkmal (Modellwort oder
+   * Speichergröße) im Text würde sonst fälschlich eine Konsole
+   * angenommen und ihr Wert um den Controller-Preis gemindert.
+   * Bewusst nur für PS4/PS5/XBOX, da diese Kategorie allein schon
+   * aus dem Wort "controller" + Konsolen-Marke erkannt wird; Joy-Cons/
+   * Pro-Controller und die generische Nintendo-Zuordnung funktionieren
+   * strukturell anders und sind hier absichtlich nicht mit angefasst.
+   */
+  const CONSOLE_FEATURE_PATTERNS = {
+    PS4_CONTROLLER: /\b(?:slim|pro|fat|matt)\b/,
+    PS5_CONTROLLER: /\b(?:slim|digital|disc)\b/,
+    XBOX_SERIES_CONTROLLER: /\b(?:series|one)\b/,
+    XBOX_ONE_CONTROLLER: /\b(?:series|one)\b/
+  };
+
+  const consoleFeaturePattern =
+    CONSOLE_FEATURE_PATTERNS[type];
+
+  if (
+    consoleFeaturePattern &&
+    !consoleFeaturePattern.test(normalizedName) &&
+    !/\b\d+\s*(?:gb|tb)\b/i.test(normalizedName)
+  ) {
+    return {
+      count,
+      type,
+      deduction: 0,
+      withoutMainDevice: true
     };
   }
 
