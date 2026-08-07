@@ -108,7 +108,8 @@ function ekDetermineCategory_(
     /\bsamsung galaxy\b/.test(normalizedName) ||
     /\bgalaxy tab\b/.test(normalizedName) ||
     /\bipad\b/.test(normalizedName) ||
-    /\btablet\b/.test(normalizedName)
+    /\btablet\b/.test(normalizedName) ||
+    /\bhuawei\b/.test(normalizedName)
   ) {
     return 'Handys + Tablets';
   }
@@ -681,8 +682,13 @@ if (
     );
   }
 
+  /*
+   * "Xbox OneX"/"Xbox OneS" (ohne Leerzeichen vor dem Buchstaben) ist
+   * dieselbe Schreibweise wie "Xbox One X"/"Xbox One S", nur ohne
+   * Leerzeichen. \bone[\s]?x\b bzw. \bone[\s]?s\b deckt beide Formen ab.
+   */
   if (
-    /\bxbox one x\b/.test(
+    /\bxbox one[\s]?x\b/.test(
       searchName
     )
   ) {
@@ -691,7 +697,7 @@ if (
   }
 
   if (
-    /\bxbox one s\b/.test(
+    /\bxbox one[\s]?s\b/.test(
       searchName
     )
   ) {

@@ -107,7 +107,7 @@ function salesDetectConsoleCategory_(normalizedName) {
    */
   const xboxMain =
     /\bxbox\s+one\s+series\s+[sx]\b/.test(value) ||
-    /\bxbox\s+one\s+[sx]\b/.test(value) ||
+    /\bxbox\s+one\s?[sx]\b/.test(value) ||
     /\bxbox\s+series\s+[sx]\b/.test(value) ||
     (/\bxbox\s+one\b/.test(value) && hasConsoleStorage);
 
@@ -185,7 +185,7 @@ function salesDetermineCategory_(normalizedName) {
   }
 
   if (
-    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b/.test(value)
+    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b/.test(value)
   ) {
     return 'Handys + Tablets';
   }
@@ -200,8 +200,13 @@ function salesDetermineCategory_(normalizedName) {
     return 'Kamera / sonstige Elektronik';
   }
 
+  /*
+   * Kein führendes \b vor "objektiv": erfasst damit auch
+   * zusammengeschriebene Formen wie "Teleobjektiv" oder
+   * "Weitwinkelobjektiv", nicht nur das eigenständige Wort.
+   */
   if (
-    /\b\d{2,3}\s*-\s*\d{2,3}\s*mm\b|\bobjektiv\b|\bnikkor\b|\blens\b/.test(value)
+    /\b\d{2,3}\s*-\s*\d{2,3}\s*mm\b|objektiv|\bnikkor\b|\blens\b/.test(value)
   ) {
     return 'Objektiv';
   }
