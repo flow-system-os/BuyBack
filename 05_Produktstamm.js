@@ -82,7 +82,7 @@ function synchronisiereProduktstamm() {
     normalizedData.forEach(item => {
       const compositeKey = productCreateCompositeKey_(
         item.category,
-        item.modelKey
+        salesCanonicalizeModelKey_(item.modelKey, item.category)
       );
 
       let product = existingProducts.byCompositeKey.get(
@@ -441,10 +441,18 @@ function productReadExistingProducts_(productSheet) {
       product
     );
 
+    /*
+     * Kanonisiert wie bei der Kandidatensuche in
+     * synchronisiereVerkaufsMapping, damit z.B. "A6000" und
+     * "ALPHA 6000" als dasselbe Produkt erkannt werden. Ohne das
+     * legt der Sync sonst einen doppelten Produktstamm-Eintrag an,
+     * sobald sich die Schreibweise eines Modellschlüssels ändert
+     * (z.B. durch eine Parser-Verbesserung).
+     */
     result.byCompositeKey.set(
       productCreateCompositeKey_(
         category,
-        modelKey
+        salesCanonicalizeModelKey_(modelKey, category)
       ),
       product
     );
