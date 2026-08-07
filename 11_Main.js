@@ -8,22 +8,6 @@
  */
 
 /**
- * Täglicher BuyBack-Datenlauf.
- *
- * Importiert neue JTL-Dateien und synchronisiert anschließend nur
- * neue oder geänderte Einkäufe sowie den Produktstamm.
- *
- * HINWEIS: Erst verwenden, wenn alle Einzelschritte erfolgreich
- * getestet wurden.
- */
-function taeglicherBuyBackDatenlauf() {
-  importiereNeueJtlDateien();
-  aktualisiereNeueUndGeaenderteEinkaeufe();
-  synchronisiereProduktstamm();
-  synchronisiereVerkaufsMapping();
-}
-
-/**
  * Vollständiger Neuaufbau nach größeren Parser- oder Regeländerungen.
  *
  * Diese Funktion bewusst nur manuell ausführen.

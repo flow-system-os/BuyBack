@@ -33,12 +33,6 @@ function taeglicherBuyBackDatenlauf() {
 
     hauptlaufFuehreSchrittAus_(
       ergebnisse,
-      'Offene Verkaufs-Mappings aktualisieren',
-      aktualisiereFehlendeVerkaufsMappings
-    );
-
-    hauptlaufFuehreSchrittAus_(
-      ergebnisse,
       'Tagesprofite aktualisieren',
       BBP2_aktualisiereTagesprofite
     );
