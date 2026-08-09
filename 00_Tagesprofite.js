@@ -156,6 +156,7 @@ function bbp2AktualisiereTagesprofiteFuerZeitraum_(startDate, endDate) {
     const existingOutput = bbp2BuildExistingOutputIndex_(outputSheet);
 
     const outputRows = [];
+    const outputUpdates = [];
     const reviewRows = [];
 
     let processed = 0;
@@ -402,13 +403,49 @@ function bbp2AktualisiereTagesprofiteFuerZeitraum_(startDate, endDate) {
 
       const existingRowNumber = existingOutput[saleKey];
       if (existingRowNumber) {
-        outputSheet
-          .getRange(existingRowNumber, 1, 1, resultRow.length)
-          .setValues([resultRow]);
+        outputUpdates.push({
+          rowNumber: existingRowNumber,
+          values: resultRow
+        });
       } else {
         outputRows.push(resultRow);
       }
     });
+
+    /*
+     * Bestehende Zeilen gebündelt in einem einzigen Lese-/Schreibzugriff
+     * aktualisieren statt pro Verkaufszeile einzeln. Bei fast 10.000
+     * Verkäufen, von denen die meisten bereits im Sheet stehen, führte
+     * ein einzelner setValues()-Aufruf pro Zeile sonst zu einem Timeout
+     * ("Service Spreadsheets timed out").
+     */
+    if (outputUpdates.length > 0) {
+      const minRow = outputUpdates.reduce(
+        (min, update) => Math.min(min, update.rowNumber),
+        outputUpdates[0].rowNumber
+      );
+      const maxRow = outputUpdates.reduce(
+        (max, update) => Math.max(max, update.rowNumber),
+        outputUpdates[0].rowNumber
+      );
+      const blockHeight = maxRow - minRow + 1;
+      const columnCount = BBP2_CONFIG.OUTPUT_HEADERS.length;
+
+      const updateRange = outputSheet.getRange(
+        minRow,
+        1,
+        blockHeight,
+        columnCount
+      );
+
+      const block = updateRange.getValues();
+
+      outputUpdates.forEach(update => {
+        block[update.rowNumber - minRow] = update.values;
+      });
+
+      updateRange.setValues(block);
+    }
 
     if (outputRows.length > 0) {
       outputSheet
