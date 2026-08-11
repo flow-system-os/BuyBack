@@ -109,7 +109,8 @@ function ekDetermineCategory_(
     /\bgalaxy tab\b/.test(normalizedName) ||
     /\bipad\b/.test(normalizedName) ||
     /\btablet\b/.test(normalizedName) ||
-    /\bhuawei\b/.test(normalizedName)
+    /\bhuawei\b/.test(normalizedName) ||
+    /\bgoogle pixel\b/.test(normalizedName)
   ) {
     return 'Handys + Tablets';
   }
@@ -786,7 +787,28 @@ if (samsungGalaxyMatch) {
   );
 }
 
- const samsungTabletMatch =
+ const googlePixelMatch =
+  searchName.match(
+    /\bgoogle\s+pixel\s+(\d{1,2}[a-z]?)(?:\s+(pro|xl))?\b/
+  );
+
+if (googlePixelMatch) {
+  let key =
+    `GOOGLE PIXEL ${googlePixelMatch[1].toUpperCase()}`;
+
+  if (googlePixelMatch[2]) {
+    key +=
+      ` ${googlePixelMatch[2].toUpperCase()}`;
+  }
+
+  return ekAppendStorageWithDefault_(
+    key,
+    searchName,
+    '128GB'
+  );
+}
+
+const samsungTabletMatch =
   searchName.match(
     /\b(?:samsung\s+)?galaxy\s+tab\s+([a-z]\d+(?:\s*\+)?(?:\s+lite)?)/i
   );
@@ -843,6 +865,20 @@ if (samsungTabletMatch) {
 
   if (sonyRxMatch) {
     return (sonyRxMatch[1] || sonyRxMatch[2]).toUpperCase();
+  }
+
+  /*
+   * Canon PowerShot G-Serie (z.B. "G7X", "G9X Mark II"). Die
+   * Kanonisierung kennt "G9X"/"G7X" bereits und kürzt "Mark II"
+   * korrekt zu "II" - hier wird nur die Rohform "G<Zahl>X" erfasst,
+   * damit der Schlüssel überhaupt erst gefunden wird.
+   */
+  const canonGxMatch = searchName.match(
+    /\bg(\d+)x\b/
+  );
+
+  if (canonGxMatch) {
+    return `G${canonGxMatch[1]}X`;
   }
 
   /*
@@ -1000,9 +1036,13 @@ if (dymoLabelWriterMatch) {
 
 
 
-/* Samsung-Kopfhörer gehören zur Audiokategorie, nicht zu Handys. */
+/*
+ * Samsung-Kopfhörer gehören zur Audiokategorie, nicht zu Handys.
+ * \s* statt \s* vor der Generationszahl erlaubt auch "Buds2"
+ * ohne Leerzeichen (JTL schreibt das oft zusammen).
+ */
 const galaxyBudsMatch = searchName.match(
-  /\b(?:samsung\s+)?galaxy\s+buds\s+(?:(\d+)\s+)?(pro|live|fe)?\b/
+  /\b(?:samsung\s+)?galaxy\s+buds\s*(?:(\d+)\s*)?(pro|live|fe)?\b/
 );
 
 if (galaxyBudsMatch) {
@@ -1015,6 +1055,24 @@ if (galaxyBudsMatch) {
     'SAMSUNG GALAXY BUDS',
     generation,
     variant
+  ].filter(Boolean).join(' ');
+}
+
+/* Apple AirPods gehören ebenfalls zur Audiokategorie. */
+const airpodsMatch = searchName.match(
+  /\bairpods\s*(pro)?\s*(\d+)?\b/
+);
+
+if (airpodsMatch) {
+  const variant = airpodsMatch[1]
+    ? airpodsMatch[1].toUpperCase()
+    : '';
+  const generation = airpodsMatch[2] || '';
+
+  return [
+    'APPLE AIRPODS',
+    variant,
+    generation
   ].filter(Boolean).join(' ');
 }
 

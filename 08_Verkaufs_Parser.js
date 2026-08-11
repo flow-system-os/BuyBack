@@ -169,7 +169,7 @@ function salesDetermineCategory_(normalizedName) {
   if (controllerKey) return 'Controller';
 
   if (
-    /\bgalaxy buds\b|\bsonos\b|\bbose\b|\bjbl\b|\bteufel\b|\bhomepod\b/.test(value)
+    /\bgalaxy buds\d*\b|\bairpods\b|\bsonos\b|\bbose\b|\bjbl\b|\bteufel\b|\bhomepod\b/.test(value)
   ) {
     return 'Audio';
   }
@@ -185,7 +185,7 @@ function salesDetermineCategory_(normalizedName) {
   }
 
   if (
-    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b/.test(value)
+    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b|\bgoogle pixel\b/.test(value)
   ) {
     return 'Handys + Tablets';
   }
