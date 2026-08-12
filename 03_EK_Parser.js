@@ -54,7 +54,7 @@ function ekContainsMixedMainProducts_(
     {
       key: 'VR',
       regex:
-        /\bpico\s*\d+\b|\boculus\b|\bmeta quest\b/
+        /\bpico\s*\d+\b|\boculus\b|\bmeta\s*quest\b/
     }
   ];
 
@@ -140,7 +140,7 @@ function ekDetermineCategory_(
 
     case 'Kameras etc.':
       if (
-        /\bpico\s*\d+\b|\bvr\b|\boculus\b|\bmeta quest\b/.test(
+        /\bpico\s*\d+\b|\bvr\b|\boculus\b|\bmeta\s*quest\b/.test(
           normalizedName
         )
       ) {
@@ -148,7 +148,7 @@ function ekDetermineCategory_(
       }
 
       if (
-        /\bsonos\b|\bbose\b|\bjbl\b|\bteufel\b|\bhomepod\b/.test(
+        /\bsonos\b|\bbose\b|\bjbl\b|\bteufel\b|\bhomepod\b|\bwh[\s-]\d{3,4}\b/.test(
           normalizedName
         )
       ) {
@@ -306,7 +306,7 @@ function ekExtractModelKey_(
  * Meta Quest / Oculus VR-Headsets
  */
 const metaQuestMatch = searchName.match(
-  /\b(?:meta\s+quest|oculus\s+quest)\s*(\d+)(?:\s+(pro|s))?\b/
+  /\b(?:meta\s*quest|oculus\s+quest)\s*(\d+)(?:\s+(pro|s))?\b/
 );
 
 if (metaQuestMatch) {
@@ -629,6 +629,23 @@ if (
   }
 
   /*
+   * Einzeln gekaufte Joy-Cons/Pro Controller ohne Konsole.
+   * Erst nach allen echten Konsolen-Mustern geprüft, damit ein
+   * gebündelter Kauf ("Switch + Joy-Con") weiterhin die Konsole
+   * als Schlüssel bekommt. [\s-]? erfasst auch "joycon" ohne
+   * Leerzeichen. Derselbe Schlüssel wie auf der Verkaufsseite
+   * (salesDetectControllerModelKey_), damit beide Seiten über die
+   * Fest-EK-Regel für Controller zusammenfinden.
+   */
+  if (
+    /\bjoy[\s-]?con(?:s)?\b|\bpro controller\b/.test(
+      searchName
+    )
+  ) {
+    return 'NINTENDO_CONTROLLER';
+  }
+
+  /*
    * ==========================================================
    * XBOX
    * ==========================================================
@@ -912,7 +929,7 @@ if (samsungTabletMatch) {
     /\beos\s+[a-z]?\d+[a-z]?\b/,
     /\bixus\s+\d+\b/,
     /\bcoolpix\s+[a-z]?\d+\b/,
-    /\blumix\s+[a-z]{1,3}\d{1,4}\b/
+    /\blumix\s+[a-z]{1,3}[\s-]?\d{1,4}\b/
   ];
 
   /*
@@ -1031,6 +1048,17 @@ if (dymoLabelWriterMatch) {
     }
 
     return key;
+  }
+
+  /* Sony WH-Kopfhörer (z.B. "WH-1000XM3"). */
+  const sonyWhMatch = searchName.match(
+    /\bwh[\s-]?(\d{3,4})(xm\d)?\b/
+  );
+
+  if (sonyWhMatch) {
+    return `SONY WH${sonyWhMatch[1]}${
+      sonyWhMatch[2] ? sonyWhMatch[2].toUpperCase() : ''
+    }`;
   }
 
 

@@ -169,7 +169,7 @@ function salesDetermineCategory_(normalizedName) {
   if (controllerKey) return 'Controller';
 
   if (
-    /\bgalaxy buds\d*\b|\bairpods\b|\bsonos\b|\bbose\b|\bjbl\b|\bteufel\b|\bhomepod\b/.test(value)
+    /\bgalaxy buds\d*\b|\bairpods\b|\bsonos\b|\bbose\b|\bjbl\b|\bteufel\b|\bhomepod\b|\bwh[\s-]\d{3,4}\b/.test(value)
   ) {
     return 'Audio';
   }
@@ -191,7 +191,7 @@ function salesDetermineCategory_(normalizedName) {
   }
 
   if (
-    /\bpico(?:\s*4)?\b|\bmeta quest\b|\boculus\b|\bvr brille\b|\bvr headset\b/.test(value)
+    /\bpico(?:\s*4)?\b|\bmeta\s*quest\b|\boculus\b|\bvr brille\b|\bvr headset\b/.test(value)
   ) {
     return 'VR';
   }
@@ -409,9 +409,9 @@ function salesCanonicalizeCameraModelKey_(modelKey) {
   }
 
   match = key.match(
-    /(?:^|\b)(?:PANASONIC\s+)?(?:LUMIX\s+)?(?:DMC[\s-]*)?((?:TZ|FZ|FT|FS|LX|SZ|G|LF)\d+[A-Z]?)(?:\b|$)/
+    /(?:^|\b)(?:PANASONIC\s+)?(?:LUMIX\s+)?(?:DMC[\s-]*)?((?:TZ|FZ|FT|FS|LX|SZ|G|LF)[\s-]?\d+[A-Z]?)(?:\b|$)/
   );
-  if (match) return match[1];
+  if (match) return match[1].replace(/[\s-]/g, '');
 
   match = key.match(/(?:^|\b)(?:NIKON\s+)?COOLPIX\s+([A-Z]?\d+)(?:\b|$)/);
   if (match) return match[1];
