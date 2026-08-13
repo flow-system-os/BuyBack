@@ -146,6 +146,7 @@ function salesContainsCameraMainProduct_(normalizedName) {
     /\bcompact(?: camera)?\b/.test(value) ||
     /\bfotocamera\b/.test(value) ||
     /\bmacchina fotografica\b/.test(value) ||
+    /\bgopro\b/.test(value) ||
     /\b(?:hx|sx|sz|tz|lx|fz|ft|fs|wx|w|rx)\s*-?\d{1,4}\b/i.test(value) ||
     /\b(?:ixus|coolpix)\s+[a-z]?\d+\b/i.test(value) ||
     /\beos\s+[a-z]?\d+[a-z]?\b/i.test(value)
@@ -185,7 +186,7 @@ function salesDetermineCategory_(normalizedName) {
   }
 
   if (
-    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b|\bgoogle pixel\b/.test(value)
+    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b|\bgoogle pixel\b|\bapple\s*watch\b/.test(value)
   ) {
     return 'Handys + Tablets';
   }
@@ -273,13 +274,20 @@ function salesCanonicalizeModelKey_(modelKey, category) {
 
   if (normalizedCategory === 'HANDYS + TABLETS') {
     const isTablet = /\b(?:GALAXY TAB|IPAD|TABLET)\b/.test(key);
+    const isWatch = /\bAPPLE WATCH\b/.test(key);
 
     key = key
       .replace(/^A04S(?=\s|$)/, 'SAMSUNG GALAXY A04S')
       .replace(/\bGALAXY TAB A(\d+)\s*\+\b/g, 'GALAXY TAB A$1+')
       .replace(/\bGALAXY A(\d+)\s*\+\b/g, 'GALAXY A$1+');
 
-    if (!/\b\d+\s*(?:GB|TB)\b/.test(key)) {
+    /*
+     * Apple Watch besitzt keine für den Schlüssel relevante GB-Angabe
+     * (anders als Handys/Tablets); der Speicher-Fallback würde sonst
+     * einen erfundenen Wert anhängen und den Schlüssel gegenüber der
+     * Einkaufsseite verfälschen.
+     */
+    if (!isWatch && !/\b\d+\s*(?:GB|TB)\b/.test(key)) {
       key += isTablet ? ' 64GB' : ' 128GB';
     }
 

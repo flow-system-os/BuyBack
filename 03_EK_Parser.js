@@ -772,6 +772,58 @@ if (
       '128GB'
     );
   }
+
+  /*
+   * iPhone X/XR/XS tragen Buchstaben statt Ziffern und wurden von der
+   * numerischen Regex oben nicht erfasst.
+   */
+  const iphoneLetterMatch =
+    searchName.match(
+      /\biphone\s+(x|xr|xs)(?:\s+(max))?\b/
+    );
+
+  if (iphoneLetterMatch) {
+    let key =
+      `IPHONE ${iphoneLetterMatch[1].toUpperCase()}`;
+
+    if (iphoneLetterMatch[2]) {
+      key += ' MAX';
+    }
+
+    return ekAppendStorageWithDefault_(
+      key,
+      searchName,
+      '64GB'
+    );
+  }
+
+  /*
+   * Apple Watch: Farbe, Gehäusematerial, Band und Gehäusegröße werden
+   * für den primären Modellschlüssel ignoriert, analog zu AirPods/Buds.
+   * Eine Generation wird nur übernommen, wenn sie ausdrücklich als
+   * "X. Gen" im Text steht - eine reine Zahl direkt nach "SE" ist sonst
+   * nicht von der Gehäusegröße (z.B. "SE 40mm") zu unterscheiden.
+   */
+  const appleWatchSeMatch =
+    searchName.match(
+      /\bapple\s*watch\s+(?:series\s+)?se\b(?:\s*(\d+)\.?\s*gen\b)?/
+    );
+
+  if (appleWatchSeMatch) {
+    return appleWatchSeMatch[1]
+      ? `APPLE WATCH SE ${appleWatchSeMatch[1]}`
+      : 'APPLE WATCH SE';
+  }
+
+  const appleWatchSeriesMatch =
+    searchName.match(
+      /\bapple\s*watch\s+series\s+(\d{1,2})\b/
+    );
+
+  if (appleWatchSeriesMatch) {
+    return `APPLE WATCH SERIES ${appleWatchSeriesMatch[1]}`;
+  }
+
 /*
  * Einzelne Verkaufsbezeichnungen enthalten nur die kurze Samsung-
  * Modellnummer. A04S wird verbindlich dem vollständigen Modellnamen
@@ -1194,6 +1246,15 @@ if (boseSoloMatch) {
     return ekUppercaseModelKey_(
       picoMatch[0]
     );
+  }
+
+  const goProMatch =
+    searchName.match(
+      /\bgopro\s*hero\s*(\d+)\b/
+    );
+
+  if (goProMatch) {
+    return `GOPRO HERO ${goProMatch[1]}`;
   }
 
   const fritzFonMatch =
