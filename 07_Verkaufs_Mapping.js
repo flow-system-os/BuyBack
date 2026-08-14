@@ -82,6 +82,16 @@ if (!aliasSheet) {
       );
     }
 
+    const rulesSheet = spreadsheet.getSheetByName(
+      EK_CONFIG.TARGET_SHEET_RULES
+    );
+
+    if (!rulesSheet) {
+      throw new Error(
+        'Das Tabellenblatt "EK_Regeln" wurde nicht gefunden.'
+      );
+    }
+
     const mappingSheet = salesGetOrCreateSheet_(
       spreadsheet,
       SALES_MAPPING_CONFIG.MAPPING_SHEET_NAME
@@ -135,6 +145,11 @@ const aliasLookup =
     salesReadAliasLookup_(
         aliasSheet
     );
+
+    const grosshaendlerEkKeys =
+      salesReadGrosshaendlerEkKeys_(
+        rulesSheet
+      );
 
     const existingMappings = salesReadExistingMappings_(
       mappingSheet
@@ -348,6 +363,52 @@ if (aliasProductId) {
           ]);
 
           reviewCount++;
+          return;
+        }
+
+        /*
+         * Großhändler-Einkäufe tauchen nie in den normalen Einkaufsdaten
+         * auf und haben daher nie ein passendes Produktstamm-Produkt.
+         * Annika trägt für solche Fälle den vom Parser bereits erkannten
+         * Modellschlüssel manuell als GROSSHAENDLER_EK-Regel in EK_Regeln
+         * ein; ab dann wird jeder Verkauf mit genau diesem Schlüssel
+         * direkt über den festen Preis abgerechnet statt in die
+         * Prüfliste zu laufen (analog zur Controller-Sonderregel oben).
+         */
+        if (
+          grosshaendlerEkKeys.has(
+            salesCleanText_(detectedModelKey).toUpperCase()
+          )
+        ) {
+          salesQueueMappingRow_(
+            existingMapping,
+            [
+            articleNumber,
+            salesProduct.description,
+            normalizedSalesName,
+            detectedCategory,
+            detectedModelKey,
+            detectedModelKey,
+            'SONDERREGEL_GROSSHAENDLER',
+            'REGEL_GROSSHAENDLER_EK',
+            now,
+            now,
+            'JA',
+            'Grosshaendler-EK wird aus EK_Regeln gelesen'
+            ],
+            newMappingRows,
+            mappingRowUpdates
+          );
+
+          existingMappings.set(articleNumber, {
+            rowNumber: existingMapping?.rowNumber || null,
+            productId: detectedModelKey,
+            active: 'JA',
+            status: 'SONDERREGEL_GROSSHAENDLER',
+            source: 'REGEL_GROSSHAENDLER_EK'
+          });
+
+          automaticallyMapped++;
           return;
         }
 
@@ -1337,6 +1398,54 @@ function salesReadAliasLookup_(aliasSheet) {
     }
 
     result.set(normalizedAlias, productId);
+  });
+
+  return result;
+}
+
+
+/**
+ * Liest alle aktiven GROSSHAENDLER_EK-Schlüssel aus EK_Regeln.
+ *
+ * KEY:
+ * normalisierter (großgeschriebener) Modellschlüssel, wie ihn Annika
+ * 1:1 aus der Spalte "Erkannter Modellschlüssel" übernimmt.
+ */
+function salesReadGrosshaendlerEkKeys_(rulesSheet) {
+  const result = new Set();
+
+  if (rulesSheet.getLastRow() < 2) {
+    return result;
+  }
+
+  const values = rulesSheet
+    .getRange(
+      2,
+      1,
+      rulesSheet.getLastRow() - 1,
+      8
+    )
+    .getDisplayValues();
+
+  values.forEach(row => {
+    const ruleType =
+      salesCleanText_(row[1]).toUpperCase();
+
+    const key =
+      salesCleanText_(row[2]).toUpperCase();
+
+    const active =
+      salesCleanText_(row[6]).toUpperCase();
+
+    if (
+      ruleType !== 'GROSSHAENDLER_EK' ||
+      !key ||
+      active !== 'JA'
+    ) {
+      return;
+    }
+
+    result.add(key);
   });
 
   return result;

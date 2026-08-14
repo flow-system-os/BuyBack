@@ -273,7 +273,7 @@ function bbp2AktualisiereTagesprofiteFuerZeitraum_(startDate, endDate) {
           status = 'OK';
         } else {
         // Sonderregel, z. B. PS4_CONTROLLER.
-        const specialKey = bbp2DetectSpecialRuleKey_(mapping);
+        const specialKey = bbp2DetectSpecialRuleKey_(mapping, fixedEkByKey);
         if (specialKey) {
           referenceKey = specialKey;
           modelKey = modelKey || specialKey;
@@ -655,9 +655,9 @@ function bbp2BuildEkIndex_(table) {
 
 function bbp2BuildFixedEkIndex_(table) {
   // Kein Code-Fallback: Fest-EK-Werte kommen ausschließlich aus aktiven
-  // CONTROLLER_EK/ZUBEHOER_EK-Zeilen in EK_Regeln. Fehlt eine Zeile,
-  // bleibt der Schlüssel unbesetzt und der Aufrufer markiert den
-  // Verkauf als Prüffall (FEST_EK_REGEL_FEHLT), statt einen
+  // CONTROLLER_EK/ZUBEHOER_EK/GROSSHAENDLER_EK-Zeilen in EK_Regeln. Fehlt
+  // eine Zeile, bleibt der Schlüssel unbesetzt und der Aufrufer markiert
+  // den Verkauf als Prüffall (FEST_EK_REGEL_FEHLT), statt einen
   // möglicherweise veralteten Wert stillschweigend zu verwenden.
   const result = {};
 
@@ -671,7 +671,12 @@ function bbp2BuildFixedEkIndex_(table) {
     const active = bbp2GetTextByAliases_(row, table.headerMap, ['Aktiv']).toUpperCase();
 
     if (active === 'NEIN' || !key) return;
-    if (ruleType && ruleType !== 'CONTROLLER_EK' && ruleType !== 'ZUBEHOER_EK') return;
+    if (
+      ruleType &&
+      ruleType !== 'CONTROLLER_EK' &&
+      ruleType !== 'ZUBEHOER_EK' &&
+      ruleType !== 'GROSSHAENDLER_EK'
+    ) return;
 
     const value = bbp2GetNumberByAliases_(row, table.headerMap, ['Wert', 'Betrag', 'EK']);
     if (value !== null) result[key] = value;
@@ -714,7 +719,7 @@ function bbp2SelectEk_(candidates, saleDate) {
   };
 }
 
-function bbp2DetectSpecialRuleKey_(mapping) {
+function bbp2DetectSpecialRuleKey_(mapping, fixedEkByKey) {
   const candidates = [mapping.ruleKey, mapping.productId, mapping.modelKey]
     .map(bbp2NormalizeKey_)
     .filter(Boolean);
@@ -725,7 +730,12 @@ function bbp2DetectSpecialRuleKey_(mapping) {
     value === 'PS5_CONTROLLER' ||
     value === 'XBOX_ONE_CONTROLLER' ||
     value === 'XBOX_SERIES_CONTROLLER' ||
-    value === 'NINTENDO_CONTROLLER'
+    value === 'NINTENDO_CONTROLLER' ||
+    // Deckt u.a. GROSSHAENDLER_EK ab: der Schlüssel folgt keinem festen
+    // Namensmuster (Annika übernimmt ihn 1:1 aus dem erkannten
+    // Modellschlüssel), daher genügt hier der direkte Abgleich mit den
+    // aktiven Fest-EK-Regeln statt eines weiteren Namensmusters.
+    (fixedEkByKey && Object.prototype.hasOwnProperty.call(fixedEkByKey, value))
   ) || '';
 }
 
