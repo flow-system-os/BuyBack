@@ -202,6 +202,18 @@ function salesDetermineCategory_(normalizedName) {
   }
 
   /*
+   * Handheld-Konsolen (Asus ROG Ally, Sony PSP) landen einkaufsseitig
+   * im Sammel-Tab "Kameras etc." und damit standardmäßig in derselben
+   * Kategorie; das wird hier nachgebildet, statt eine eigene Kategorie
+   * nur für diese wenigen Fälle einzuführen.
+   */
+  if (
+    /\basus\s*rog\s*ally\b|\bpsp\b/.test(value)
+  ) {
+    return 'Kamera / sonstige Elektronik';
+  }
+
+  /*
    * Kein führendes \b vor "objektiv": erfasst damit auch
    * zusammengeschriebene Formen wie "Teleobjektiv" oder
    * "Weitwinkelobjektiv", nicht nur das eigenständige Wort.

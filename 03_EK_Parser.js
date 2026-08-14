@@ -1257,6 +1257,21 @@ if (boseSoloMatch) {
     return `GOPRO HERO ${goProMatch[1]}`;
   }
 
+  if (/\basus\s*rog\s*ally\b/.test(searchName)) {
+    return 'ASUS ROG ALLY';
+  }
+
+  /*
+   * "PSP Street" ist die europäische Handelsbezeichnung der PSP-E1000
+   * und dasselbe Gerät. PSP-E1000 wird bereits über den generischen
+   * Buchstaben-Zahlen-Fallback weiter unten korrekt zu "E1000"; ohne
+   * diesen Sonderfall würde "PSP Street" (keine Ziffer im Text) einen
+   * eigenen, abweichenden Schlüssel bekommen und nie mit E1000 matchen.
+   */
+  if (/\bpsp\s*street\b/.test(searchName)) {
+    return 'E1000';
+  }
+
   const fritzFonMatch =
     searchName.match(
       /\bfritz\s*!?\s*fon\s+([a-z]\d+)\b/
