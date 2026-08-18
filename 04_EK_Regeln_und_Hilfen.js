@@ -620,6 +620,17 @@ function ekParseMoney_(value) {
   } else if (hasComma) {
     text =
       text.replace(',', '.');
+  } else if (hasDot) {
+    /*
+     * Kein Komma vorhanden: ein einzelner Punkt kann deutsches
+     * Tausendertrennzeichen sein (z.B. "1.650" = 1650 EUR) oder ein
+     * Dezimalpunkt (z.B. "199.99"). Deutsche Tausendergruppen haben
+     * immer genau drei Ziffern, ein Preis mit Nachkommastellen hat
+     * ein oder zwei - das unterscheidet beide Fälle zuverlässig.
+     */
+    if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+      text = text.replace(/\./g, '');
+    }
   }
 
   const parsed =

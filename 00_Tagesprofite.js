@@ -842,6 +842,13 @@ function bbp2ParseMoney_(value) {
     }
   } else if (hasComma) {
     text = text.replace(',', '.');
+  } else if (hasDot) {
+    // Kein Komma vorhanden: ein einzelner Punkt mit exakt drei
+    // Nachkommaziffern ist ein deutsches Tausendertrennzeichen
+    // (z.B. "1.650" = 1650 EUR), keine Dezimalstelle.
+    if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+      text = text.replace(/\./g, '');
+    }
   }
 
   const number = Number(text);

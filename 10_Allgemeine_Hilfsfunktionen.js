@@ -136,6 +136,18 @@ function parseGermanNumber_(value) {
   } else if (hasComma) {
     // Deutsches Dezimaltrennzeichen: 99,90
     text = text.replace(',', '.');
+  } else if (hasDot) {
+    /*
+     * Kein Komma vorhanden: ein einzelner Punkt kann deutsches
+     * Tausendertrennzeichen sein (z.B. "1.650" = 1650 EUR) oder ein
+     * Dezimalpunkt (z.B. "199.99"). Deutsche Tausendergruppen haben
+     * immer genau drei Ziffern, ein Preis mit Nachkommastellen hat
+     * ein oder zwei - das unterscheidet beide Fälle zuverlässig, ohne
+     * z.B. "199.99" fälschlich zu 19999 zu machen.
+     */
+    if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+      text = text.replace(/\./g, '');
+    }
   }
 
   const number = Number(text);
