@@ -8,20 +8,24 @@
  * Funktionen und Konstanten automatisch. Es sind keine Imports nötig.
  */
 
-function salesIsVideoGame_(normalizedName) {
+/**
+ * Prüft, ob der Verkaufstitel einen der von Annika/dem Team im
+ * Tabellenblatt "Spiele_Titel" gepflegten Such-Begriffe enthält.
+ *
+ * gameTitles ist eine Liste bereits kleingeschriebener, getrimmter
+ * Such-Begriffe (siehe salesReadGameTitles_ in 07_Verkaufs_Mapping.js).
+ * Bewusst einfacher Substring-Abgleich statt Regex, weil die
+ * Such-Begriffe von Annika als reiner Text eingetragen werden, nicht
+ * als Regex-Syntax.
+ */
+function salesIsVideoGame_(normalizedName, gameTitles) {
   const value = String(normalizedName || '').toLowerCase();
 
-  const knownGamePatterns = [
-    /\bthe last of us\b/,
-    /\blandwirtschafts[\s-]*simulator\b/,
-    /\bcall of duty\b/,
-    /\bminecraft\b/,
-    /\brocket league\b/,
-    /\bdragon age\b/,
-    /\bthe hunter[\s-]*call of the wild\b/
-  ];
+  if (!gameTitles || gameTitles.length === 0) {
+    return false;
+  }
 
-  return knownGamePatterns.some(pattern => pattern.test(value));
+  return gameTitles.some(title => title && value.includes(title));
 }
 
 /**

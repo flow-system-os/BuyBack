@@ -348,6 +348,43 @@ const SALES_MAPPING_CONFIG = Object.freeze({
 });
 
 /**
+ * Selbstständig von Annika/dem Team pflegbare Liste von Spieltiteln,
+ * die als Videospiel gelten sollen (EK 0 EUR, siehe salesIsVideoGame_).
+ * Bewusst als Tabellenblatt statt als Code-Liste, damit neue Titel
+ * ohne Code-Änderung ergänzt werden können.
+ */
+
+const GAME_LIST_CONFIG = Object.freeze({
+  SHEET_NAME: 'Spiele_Titel',
+
+  HEADERS: [
+    'Such-Begriff',
+    'Plattform',
+    'Aktiv',
+    'Hinzugefügt am',
+    'Kommentar'
+  ],
+
+  /*
+   * Einmalige Startbefüllung beim ersten Anlegen des Blatts - die
+   * bisher fest im Code stehenden Titel, damit beim Umstieg keine
+   * bereits funktionierende Erkennung verlorengeht. Danach ist das
+   * Tabellenblatt die alleinige Quelle, kein Code-Fallback.
+   */
+  SEED_ROWS: [
+    ['the last of us', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['landwirtschaftssimulator', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['landwirtschafts simulator', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['call of duty', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['minecraft', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['rocket league', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['dragon age', '', 'JA', '', 'Ursprünglich fest im Code'],
+    ['the hunter call of the wild', '', 'JA', '', 'Ursprünglich fest im Code']
+  ]
+});
+
+
+/**
  * Stabile Zuordnungen für JTL-Artikelnummern, deren Marktplatzbezeichnung
  * je nach Sprache oder Paketlisting wechseln kann.
  *

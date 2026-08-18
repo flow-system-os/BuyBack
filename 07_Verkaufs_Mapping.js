@@ -112,6 +112,30 @@ if (!aliasSheet) {
       SALES_MAPPING_CONFIG.LOG_SHEET_NAME
     );
 
+    const gameListSheet = salesGetOrCreateSheet_(
+      spreadsheet,
+      GAME_LIST_CONFIG.SHEET_NAME
+    );
+
+    const gameListIsNew =
+      gameListSheet.getLastRow() === 0;
+
+    salesEnsureHeaders_(
+      gameListSheet,
+      GAME_LIST_CONFIG.HEADERS
+    );
+
+    if (gameListIsNew) {
+      gameListSheet
+        .getRange(
+          2,
+          1,
+          GAME_LIST_CONFIG.SEED_ROWS.length,
+          GAME_LIST_CONFIG.HEADERS.length
+        )
+        .setValues(GAME_LIST_CONFIG.SEED_ROWS);
+    }
+
     salesEnsureHeaders_(
       mappingSheet,
       SALES_MAPPING_CONFIG.MAPPING_HEADERS
@@ -149,6 +173,11 @@ const aliasLookup =
     const grosshaendlerEkKeys =
       salesReadGrosshaendlerEkKeys_(
         rulesSheet
+      );
+
+    const gameTitles =
+      salesReadGameTitles_(
+        gameListSheet
       );
 
     const existingMappings = salesReadExistingMappings_(
@@ -245,7 +274,7 @@ if (aliasProductId) {
          * Spiele und Controller werden direkt über feste Geschäftsregeln
          * zugeordnet. Dafür ist kein Produktstamm-Treffer erforderlich.
          */
-        if (salesIsVideoGame_(normalizedSalesName)) {
+        if (salesIsVideoGame_(normalizedSalesName, gameTitles)) {
           salesQueueMappingRow_(
             existingMapping,
             [
@@ -1446,6 +1475,47 @@ function salesReadGrosshaendlerEkKeys_(rulesSheet) {
     }
 
     result.add(key);
+  });
+
+  return result;
+}
+
+
+/**
+ * Liest alle aktiven Such-Begriffe aus dem Tabellenblatt "Spiele_Titel".
+ *
+ * Gibt eine Liste bereits kleingeschriebener, getrimmter Begriffe
+ * zurück, die salesIsVideoGame_ per einfachem Substring-Abgleich gegen
+ * die normalisierte Verkaufsbezeichnung prüft.
+ */
+function salesReadGameTitles_(gameListSheet) {
+  const result = [];
+
+  if (gameListSheet.getLastRow() < 2) {
+    return result;
+  }
+
+  const values = gameListSheet
+    .getRange(
+      2,
+      1,
+      gameListSheet.getLastRow() - 1,
+      GAME_LIST_CONFIG.HEADERS.length
+    )
+    .getDisplayValues();
+
+  values.forEach(row => {
+    const term =
+      salesCleanText_(row[0]).toLowerCase();
+
+    const active =
+      salesCleanText_(row[2]).toUpperCase();
+
+    if (!term || active !== 'JA') {
+      return;
+    }
+
+    result.push(term);
   });
 
   return result;
