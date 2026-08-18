@@ -193,8 +193,13 @@ function salesContainsCameraMainProduct_(normalizedName) {
 function salesDetermineCategory_(normalizedName) {
   const value = String(normalizedName || '').toLowerCase();
 
-  if (salesIsVideoGame_(value)) return 'Spiel';
-
+  /*
+   * Die Spiele-Erkennung (salesIsVideoGame_) läuft bereits vorgelagert
+   * in synchronisiereVerkaufsMapping() mit den aktiven Titeln aus dem
+   * Tabellenblatt "Spiele_Titel" und beendet die Verarbeitung dort mit
+   * der SPIELE-Sonderregel - diese Funktion wird für erkannte Spiele
+   * also nie mehr erreicht. Kein zusätzlicher Aufruf hier nötig.
+   */
   const consoleCategory = salesDetectConsoleCategory_(value);
   if (consoleCategory) return consoleCategory;
 
