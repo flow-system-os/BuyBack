@@ -201,6 +201,19 @@ function ekExtractModelKey_(
     return 'PLAYSTATION PORTAL';
   }
 
+  /*
+   * PS5 Pro fehlte bisher komplett und fiel auf die generische
+   * "unbekannte PS5"-Regel weiter unten zurück (PS5 DISC 825GB) -
+   * ein deutlich anderes, teureres Produkt.
+   */
+  if (
+    /\bps5 pro\b|\bplaystation 5 pro\b/.test(
+      searchName
+    )
+  ) {
+    return 'PS5 PRO 2TB';
+  }
+
   if (
     /\bps5 slim disc\b|\bplaystation 5 slim disc\b/.test(
       searchName
@@ -241,6 +254,25 @@ function ekExtractModelKey_(
   ) {
     return ekAppendPs5Storage_(
       'PS5 DIGITAL',
+      searchName
+    );
+  }
+
+  /*
+   * "PS5 Slim" ohne ausdrückliches "Disc"/"Digital" (z.B. "PlayStation 5
+   * Slim 1000GB - Bianco") wurde von den beiden spezifischeren Regeln
+   * oben nicht erfasst und fiel auf die normale (nicht-Slim) 825-GB-
+   * Variante zurück - ohne erkennbare Speicherangabe im Schlüssel.
+   * Mangels gegenteiliger Angabe wird die häufigere Disc-Variante
+   * angenommen.
+   */
+  if (
+    /\bps5 slim\b|\bplaystation 5 slim\b/.test(
+      searchName
+    )
+  ) {
+    return ekAppendPs5Storage_(
+      'PS5 SLIM DISC',
       searchName
     );
   }

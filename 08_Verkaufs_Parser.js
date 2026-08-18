@@ -100,8 +100,8 @@ function salesDetectConsoleCategory_(normalizedName) {
     (/\b(?:sony\s+)?playstation\s*4\b/.test(value) && hasConsoleStorage);
 
   const ps5Main =
-    /\bps5\s+(?:slim|digital|disc)\b/.test(value) ||
-    /\bplaystation\s*5\s+(?:slim|digital|disc)\b/.test(value) ||
+    /\bps5\s+(?:pro|slim|digital|disc)\b/.test(value) ||
+    /\bplaystation\s*5\s+(?:pro|slim|digital|disc)\b/.test(value) ||
     (/\b(?:sony\s+)?playstation\s*5\b/.test(value) && hasConsoleStorage);
 
   /*
