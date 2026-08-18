@@ -104,15 +104,43 @@ function salesDetectConsoleCategory_(normalizedName) {
    * "Xbox One Series S/X" existiert nicht und wird als Tippfehler
    * für "Xbox Series S/X" verstanden. "Xbox One S/X" bleibt eine
    * eigenständige Produktfamilie.
+   *
+   * Eine bloße Erwähnung von "Xbox Series S/X" ohne Speicherangabe
+   * reicht NICHT, wenn sie nicht am Textanfang steht (das eigentliche
+   * Hauptprodukt) - sonst wird z.B. "Dead Island 2 (Xbox One, Series X)"
+   * oder "Lost Judgment (Microsoft Xbox Series X|S)" fälschlich als
+   * Konsolen-Verkauf erkannt und bekommt den EK einer ganzen Konsole
+   * statt korrekt unerkannt zu bleiben.
    */
-  const xboxMain =
+  const xboxSeriesMentioned =
     /\bxbox\s+one\s+series\s+[sx]\b/.test(value) ||
+    /\bxbox\s+series\s+[sx]\b/.test(value);
+
+  const xboxSeriesAtStart =
+    /^(?:microsoft\s+)?xbox\s+(?:one\s+)?series\s+[sx]\b/.test(value);
+
+  const xboxMain =
     /\bxbox\s+one\s?[sx]\b/.test(value) ||
-    /\bxbox\s+series\s+[sx]\b/.test(value) ||
+    (xboxSeriesMentioned && (hasConsoleStorage || xboxSeriesAtStart)) ||
     (/\bxbox\s+one\b/.test(value) && hasConsoleStorage);
 
+  /*
+   * Dieselbe Absicherung für "Nintendo Switch" ohne Lite/OLED-Zusatz:
+   * Spieltitel wie "Mario + Rabbids Sparks Of Hope (Nintendo Switch,
+   * 2022)" oder "CTR Crash Team Racing Nitro Fueled Nintendo Switch"
+   * erwähnen die Plattform nur als Anhängsel, nicht als Hauptprodukt
+   * am Textanfang - ohne diese Absicherung bekommen sie sonst den EK
+   * einer kompletten Switch-Konsole zugewiesen. 3DS/2DS/DSi/Wii sind
+   * bewusst nicht mit einbezogen: dort gibt es keine vergleichbar
+   * zuverlässige Speicher- oder Positions-basierte Unterscheidung,
+   * das braucht eine eigene Lösung (siehe Spiele-Titel-Tabellenblatt).
+   */
+  const nintendoSwitchBareAtStart =
+    /^nintendo\s+switch\b/.test(value);
+
   const nintendoMain =
-    /\bnintendo\s+switch(?:\s+(?:lite|oled))?\b/.test(value) ||
+    /\bnintendo\s+switch\s+(?:lite|oled)\b/.test(value) ||
+    nintendoSwitchBareAtStart ||
     /\bnew\s+nintendo\s+3ds\b/.test(value) ||
     /\bnintendo\s+(?:3ds|2ds|dsi|ds lite|wii)\b/.test(value) ||
     /\bgame\s?boy\b/.test(value);

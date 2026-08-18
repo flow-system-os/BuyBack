@@ -524,10 +524,26 @@ if (
     return 'SWITCH OLED';
   }
 
-  if (
-    /\bnintendo switch\b|\bswitch\b/.test(
+  /*
+   * Eine bloße Erwähnung von "Switch" reicht nicht, wenn sie nicht am
+   * Textanfang steht und keine Speichergröße dabeisteht - sonst
+   * bekommen Spieltitel wie "Mario + Rabbids Sparks Of Hope (Nintendo
+   * Switch, 2022)" den EK einer kompletten Switch-Konsole zugewiesen,
+   * obwohl es sich nur um ein einzelnes Spiel handelt.
+   */
+  const hasSwitchStorage =
+    /\b(?:32|64|128|256)\s*(?:gb|go)\b/.test(
       searchName
-    )
+    );
+
+  const switchBareAtStart =
+    /^(?:nintendo\s+)?switch\b/.test(
+      searchName
+    );
+
+  if (
+    (/\bnintendo switch\b|\bswitch\b/.test(searchName)) &&
+    (switchBareAtStart || hasSwitchStorage)
   ) {
     return 'SWITCH STANDARD';
   }
@@ -657,19 +673,36 @@ if (
    * gegeben). Muss vor der generischen "xbox one"-Prüfung stehen,
    * sonst greift diese zuerst und liefert die falsche Konsolen-
    * Generation (XBOX ONE statt XBOX SERIES S/X).
+   *
+   * Eine bloße Erwähnung ohne Speichergröße und ohne dass die Konsole
+   * am Textanfang (also als Hauptprodukt) steht, reicht NICHT - sonst
+   * bekommen Spieltitel wie "Dead Island 2 (Xbox One, Series X)" oder
+   * "Lost Judgment (Microsoft Xbox Series X|S)" den EK einer
+   * kompletten Konsole zugewiesen.
    */
-  if (
-    /\bxbox one series x\b/.test(
+  const hasXboxSeriesStorage =
+    /\b(?:500|512|825|1000)\s*(?:gb|go)\b|\b1\s*tb\b/.test(
       searchName
-    )
+    );
+
+  const xboxSeriesAtStart =
+    /^(?:microsoft\s+)?xbox\s+(?:one\s+)?series\s+[sx]\b/.test(
+      searchName
+    );
+
+  const xboxSeriesIsMainProduct =
+    hasXboxSeriesStorage || xboxSeriesAtStart;
+
+  if (
+    /\bxbox one series x\b/.test(searchName) &&
+    xboxSeriesIsMainProduct
   ) {
     return 'XBOX SERIES X 1TB';
   }
 
   if (
-    /\bxbox one series s\b/.test(
-      searchName
-    )
+    /\bxbox one series s\b/.test(searchName) &&
+    xboxSeriesIsMainProduct
   ) {
     return ekAppendStorageWithDefault_(
       'XBOX SERIES S',
@@ -679,18 +712,16 @@ if (
   }
 
   if (
-    /\bxbox series x\b/.test(
-      searchName
-    )
+    /\bxbox series x\b/.test(searchName) &&
+    xboxSeriesIsMainProduct
   ) {
     /* Series X wird im BuyBack-Modell standardmäßig als 1 TB geführt. */
     return 'XBOX SERIES X 1TB';
   }
 
   if (
-    /\bxbox series s\b/.test(
-      searchName
-    )
+    /\bxbox series s\b/.test(searchName) &&
+    xboxSeriesIsMainProduct
   ) {
     /* Series S ohne Speicherangabe entspricht der 512-GB-Variante. */
     return ekAppendStorageWithDefault_(
@@ -726,10 +757,15 @@ if (
     );
   }
 
+  /*
+   * Bloßes "Xbox One" (ohne X/S-Zusatz) läuft in dieselbe Falle wie
+   * "Xbox Series S/X" oben, z.B. bei "Dead Island 2 Pulp Edition
+   * (Xbox One, Series X)" - dieselbe Absicherung greift hier.
+   */
   if (
-    /\bxbox one\b/.test(
-      searchName
-    )
+    /\bxbox one\b/.test(searchName) &&
+    (hasXboxSeriesStorage ||
+      /^(?:microsoft\s+)?xbox\s+one\b/.test(searchName))
   ) {
     return ekAppendStorageWithDefault_(
       'XBOX ONE',
