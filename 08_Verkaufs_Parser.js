@@ -142,9 +142,21 @@ function salesDetectConsoleCategory_(normalizedName) {
   const nintendoSwitchBareAtStart =
     /^nintendo\s+switch\b/.test(value);
 
+  /*
+   * Marktplatz-Angebote lassen "Nintendo" häufig ganz weg ("Switch
+   * 32GB - Gris/Gris", "Switch Lite 32GB - Türkis") - ohne "Nintendo"
+   * fiel das bisher auf Kategorie UNBEKANNT, obwohl der Modell-
+   * schlüssel selbst korrekt erkannt wurde. Die Speichergröße (32/64/
+   * 256GB, die einzigen bei Switch verkauften Größen) dient hier als
+   * eigenständiges, zuverlässiges Signal unabhängig vom "Nintendo"-Wort.
+   */
+  const switchWithStorageNoNintendo =
+    /\bswitch\s*(?:lite|oled|2)?\s*(?:32|64|256)\s*(?:gb|go)\b/.test(value);
+
   const nintendoMain =
     /\bnintendo\s+switch\s+(?:lite|oled)\b/.test(value) ||
     nintendoSwitchBareAtStart ||
+    switchWithStorageNoNintendo ||
     /\bnew\s+nintendo\s+3ds\b/.test(value) ||
     /\bnintendo\s+(?:3ds|2ds|dsi|ds lite|wii)\b/.test(value) ||
     /\bgame\s?boy\b/.test(value);
@@ -222,8 +234,16 @@ function salesDetermineCategory_(normalizedName) {
     return 'Sonstige Elektronik';
   }
 
+  /*
+   * "Galaxy S21...", "Galaxy A54..." ohne das Wort "Samsung" davor
+   * (sehr verbreitet bei Marktplatz-Titeln) fielen bisher auf
+   * Kategorie UNBEKANNT, obwohl der Modellschlüssel selbst korrekt
+   * erkannt wurde. "Galaxy Tab"/"Galaxy Buds" brauchten "Samsung"
+   * schon vorher nicht (eigene Prüfungen weiter oben/unten), nur die
+   * Telefon-Reihen (S/A/Note/Z Fold/Z Flip) verlangten es fälschlich.
+   */
   if (
-    /\biphone\b|\bsamsung galaxy\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b|\bgoogle pixel\b|\bapple\s*watch\b/.test(value)
+    /\biphone\b|\bsamsung galaxy\b|\bgalaxy\s+(?:s\d+|a\d+|note\s?\d+|z\s?fold|z\s?flip)\b|\bgalaxy tab\b|\bipad\b|\btablet\b|\bhuawei\b|\bgoogle pixel\b|\bapple\s*watch\b/.test(value)
   ) {
     return 'Handys + Tablets';
   }
