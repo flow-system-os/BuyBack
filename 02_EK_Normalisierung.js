@@ -754,10 +754,16 @@ function ekDetectControllers_(
    * Erfasst beispielsweise:
    * "2 controller"
    * "1 controller"
+   *
+   * "DualSense"/"DualShock" gelten als eigene Erkennungswörter, weil
+   * Verkaufsbezeichnungen wie "PS5 DualSense Edge" den Controller oft
+   * über den Produktnamen statt über das Wort "Controller" benennen -
+   * ohne diese Ergänzung wurde so ein Einkauf als kompletter
+   * PS5-Konsolenkauf behandelt statt der Controller-Wert abgezogen.
    */
   const explicitCountMatch =
     normalizedName.match(
-      /\b(\d+)\s*(?:x\s*)?controller\b/
+      /\b(\d+)\s*(?:x\s*)?(?:controller|dualsense|dualshock)\b/
     );
 
   if (explicitCountMatch) {
@@ -765,10 +771,10 @@ function ekDetectControllers_(
       Number(explicitCountMatch[1]);
 
   } else if (
-    /\bcontroller\b/.test(normalizedName)
+    /\bcontroller\b|\bdualsense\b|\bdualshock\b/.test(normalizedName)
   ) {
     /*
-     * Wenn nur "Controller" ohne Anzahl steht,
+     * Wenn nur "Controller"/"DualSense"/"DualShock" ohne Anzahl steht,
      * wird zunächst ein Controller angenommen.
      */
     count = 1;
