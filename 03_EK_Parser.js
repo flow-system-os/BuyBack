@@ -905,9 +905,17 @@ if (/\ba04s\b/.test(searchName)) {
   );
 }
 
+/*
+ * "Galaxy" fehlt in manchen Verkaufsbezeichnungen ("Samsung S21 Ultra
+ * 5G 256GB"), und die Note-Reihe folgt keinem S/A-Zahlenmuster
+ * ("Note 10+"). Beides fiel bisher auf einen generischen Fallback-
+ * Schlüssel ohne erkannte Speichergröße zurück, dem eine spätere
+ * Kanonisierung dann fälschlich einen 128-GB-Standardwert anhängte,
+ * unabhängig von der tatsächlich im Text stehenden Größe.
+ */
 const samsungGalaxyMatch =
   searchName.match(
-    /\b(?:samsung\s+)?galaxy\s+([sa]\d+(?:s)?(?:\s+ultra|\s+plus|\s+fe)?)\b/
+    /\b(?:samsung\s+(?:galaxy\s+)?|galaxy\s+)((?:note\s*\d+|[sa]\d+(?:s)?)(?:\s+ultra|\s+plus|\s+fe)?)\b/
   );
 
 if (samsungGalaxyMatch) {
