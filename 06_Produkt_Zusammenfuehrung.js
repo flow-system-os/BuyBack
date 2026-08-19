@@ -545,6 +545,12 @@ function bereinigeAktuelleDoppelprodukteSicher() {
       oldProductId: 'BB000302',
       targetProductId: 'BB000285',
       reason: 'Xbox One S 1TB doppelt angelegt'
+    },
+    {
+      oldProductId: 'BB000345',
+      targetProductId: 'BB000300',
+      reason: 'PS5 Slim 500GB doppelt angelegt (reale Sony-Hardware gibt es nur als 1TB, ' +
+        'die Modellschluessel-Kanonisierung fasst beide Eintraege bereits zusammen)'
     }
   ];
 
