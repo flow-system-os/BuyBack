@@ -25,7 +25,21 @@ function salesIsVideoGame_(normalizedName, gameTitles) {
     return false;
   }
 
-  return gameTitles.some(title => title && value.includes(title));
+  /*
+   * Bindestriche werden für diesen Vergleich wie Leerzeichen
+   * behandelt ("The Hunter-Call of The Wild-Edition" enthält sonst
+   * nicht die im Sheet hinterlegte Schreibweise "the hunter call of
+   * the wild"). Bewusst nur hier lokal angewendet, nicht in der
+   * allgemeinen Normalisierung - dort tragen Bindestriche in
+   * Modellcodes (z.B. "HX-5V") echte Bedeutung.
+   */
+  const spacedValue = value.replace(/-/g, ' ').replace(/\s+/g, ' ');
+
+  return gameTitles.some(title => {
+    if (!title) return false;
+    const spacedTitle = title.replace(/-/g, ' ').replace(/\s+/g, ' ');
+    return value.includes(title) || spacedValue.includes(spacedTitle);
+  });
 }
 
 /**
