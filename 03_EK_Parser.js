@@ -1018,8 +1018,15 @@ if (samsungTabletMatch) {
    * korrekt zu "II" - hier wird nur die Rohform "G<Zahl>X" erfasst,
    * damit der Schlüssel überhaupt erst gefunden wird.
    */
+  /*
+   * Optionales Leerzeichen zwischen Zahl und "X" ("G9 X Mark II"):
+   * ohne das fällt die Erkennung bis zum Objektiv-/Auflösungs-
+   * Fallback weiter unten durch und liefert dort z.B. faelschlich
+   * eine im selben Text stehende Pixel-Aufloesung ("CMOS 5472") als
+   * Modellschluessel.
+   */
   const canonGxMatch = searchName.match(
-    /\bg(\d+)x\b/
+    /\bg(\d+)\s*x\b/
   );
 
   if (canonGxMatch) {
@@ -1041,8 +1048,8 @@ if (samsungTabletMatch) {
   }
 
     const cameraPatterns = [
-      /\bdsc[\s-]?[a-z]{0,3}\d{1,4}\b/,
-/\bhx[\s-]?\d{1,4}\b/,
+      /\bdsc[\s-]?[a-z]{0,3}\d{1,4}[a-z]?\b/,
+/\bhx[\s-]?\d{1,4}[a-z]?\b/,
     /\bsx\d{2,4}\b/,
     /\bsz\d{1,3}\b/,
     /\btz\d{1,3}\b/,
@@ -1057,7 +1064,14 @@ if (samsungTabletMatch) {
     /\beos\s+[a-z]?\d+[a-z]?\b/,
     /\bixus\s+\d+\b/,
     /\bcoolpix\s+[a-z]?\d+\b/,
-    /\blumix\s+[a-z]{1,3}[\s-]?\d{1,4}\b/
+    /*
+     * "DMC-" zwischen "Lumix" und dem eigentlichen Modellcode wird
+     * toleriert ("Lumix DMC-FT25", "Lumix DMC-LF1"). Ohne das matcht
+     * dieses Muster gar nicht und der Objektiv-Brennweiten-Fallback
+     * weiter unten liefert stattdessen faelschlich das mitverkaufte
+     * Objektiv als Kamera-Schluessel.
+     */
+    /\blumix\s+(?:dmc[\s-]*)?[a-z]{1,3}[\s-]?\d{1,4}\b/
   ];
 
   /*
