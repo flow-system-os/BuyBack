@@ -1496,7 +1496,8 @@ function ekRemoveColorWords_(value) {
     'zilver', // Niederländisch: silber
     'blanc', // Französisch: weiß
     'argent', // Französisch: silber
-    'noir' // Französisch: schwarz
+    'noir', // Französisch: schwarz
+    'negro' // Spanisch: schwarz
   ];
 
   let result =
@@ -1838,6 +1839,14 @@ function ekNormalizeProductName_(value) {
     .replace(/ü/g, 'ue')
     .replace(/ß/g, 'ss')
     .replace(/[–—]/g, '-')
+    /*
+     * Typografische Apostroph-Varianten (’ ‘ ´ ` ′) vereinheitlichen.
+     * Marktplatz-Texte schreiben denselben Titel (z. B. "Marvel's
+     * Spider-Man") inkonsistent mit geradem oder typografischem
+     * Apostroph - ohne diese Vereinheitlichung matcht ein Spiele_Titel-
+     * Eintrag nur die Hälfte der real vorkommenden Schreibweisen.
+     */
+    .replace(/[’‘´`′]/g, "'")
     .replace(/\+/g, ' + ')
     .replace(/[()[\],;:]/g, ' ')
     .replace(/\s+/g, ' ')

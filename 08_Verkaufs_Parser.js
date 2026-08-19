@@ -274,9 +274,10 @@ function salesDetermineCategory_(normalizedName) {
    * Kein führendes \b vor "objektiv": erfasst damit auch
    * zusammengeschriebene Formen wie "Teleobjektiv" oder
    * "Weitwinkelobjektiv", nicht nur das eigenständige Wort.
+   * "objectif" ist die französische Entsprechung (reale Prüffälle).
    */
   if (
-    /\b\d{2,3}\s*-\s*\d{2,3}\s*mm\b|objektiv|\bnikkor\b|\blens\b/.test(value)
+    /\b\d{2,3}\s*-\s*\d{2,3}\s*mm\b|objektiv|objectif|\bnikkor\b|\blens\b/.test(value)
   ) {
     return 'Objektiv';
   }
@@ -494,26 +495,26 @@ function salesCanonicalizeCameraModelKey_(modelKey) {
   if (match) return match[1];
 
   match = key.match(
-    /(?:^|\b)(?:CANON\s+)?(?:POWERSHOT\s+)?((?:SX|S|A)\d+(?:\s*HS)?)(?:\b|$)/
+    /(?:^|\b)(?:CANON\s+)?(?:POWERSHOT\s+)?((?:SX|S|A)\d+(?:\s*(?:HS|IS))?)(?:\b|$)/
   );
   if (
     match &&
     (
       /POWERSHOT|CANON/.test(key) ||
-      /^(?:SX|S|A)\d+(?:\s*HS)?$/.test(key)
+      /^(?:SX|S|A)\d+(?:\s*(?:HS|IS))?$/.test(key)
     )
   ) {
     /*
-     * Der "HS"-Zusatz (z. B. "SX240HS") wird bewusst entfernt:
-     * Einkaufstabelle schreibt oft nur "SX240 HS" mit Leerzeichen,
-     * wodurch die Modellschlüssel-Erkennung dort schon vor der
-     * Kanonisierung nur "SX240" liefert. Ohne dieses Kürzen würden
+     * Der "HS"/"IS"-Zusatz (z. B. "SX240HS", "SX200IS") wird bewusst
+     * entfernt: Einkaufstabelle schreibt oft nur "SX240 HS" mit
+     * Leerzeichen, wodurch die Modellschlüssel-Erkennung dort schon vor
+     * der Kanonisierung nur "SX240" liefert. Ohne dieses Kürzen würden
      * EK- und Verkaufsseite dauerhaft auf unterschiedlichen
-     * Schlüsseln (SX240 vs. SX240HS) landen.
+     * Schlüsseln (SX240 vs. SX240HS, SX200 vs. SX200IS) landen.
      */
     return match[1]
       .replace(/\s+/g, '')
-      .replace(/HS$/, '');
+      .replace(/(?:HS|IS)$/, '');
   }
 
   if (
