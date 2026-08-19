@@ -189,6 +189,29 @@ function ekExtractModelKey_(
 
   /*
    * ==========================================================
+   * SPEICHERKARTEN (SANDISK)
+   * ==========================================================
+   * Diese Produkte kommen ausschliesslich vom Grosshaendler (kein
+   * Produktstamm-Treffer vorgesehen, siehe GROSSHAENDLER_EK in
+   * EK_Regeln). Ohne eigenes Muster fiel der Text bis zu einem
+   * generischen Fallback durch, der faelschlich die UHS-
+   * Geschwindigkeitsklasse ("V60") statt eines echten Modellnamens
+   * als Schluessel lieferte - ein Grosshaendler-Regeleintrag waere
+   * damit weder stabil noch auf andere Kapazitaeten uebertragbar.
+   */
+  const sandiskMatch = searchName.match(
+    /\bsandisk\s+(extreme\s+pro|extreme\s+plus|extreme|ultra|professional)\b/
+  );
+
+  if (sandiskMatch) {
+    return ekAppendStorage_(
+      `SANDISK ${sandiskMatch[1].toUpperCase()}`,
+      searchName
+    );
+  }
+
+  /*
+   * ==========================================================
    * PLAYSTATION
    * ==========================================================
    */
