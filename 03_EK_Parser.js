@@ -1916,6 +1916,15 @@ function ekNormalizeProductName_(value) {
      * Eintrag nur die Hälfte der real vorkommenden Schreibweisen.
      */
     .replace(/[’‘´`′]/g, "'")
+    /*
+     * Übrige Akzentzeichen (é, á, í, ñ, ç, ...) auf die unakzentuierte
+     * Grundform reduzieren - deutsche Umlaute/ß sind oben bereits
+     * explizit behandelt und bleiben davon unberührt, da sie zu diesem
+     * Zeitpunkt schon ersetzt wurden. Ohne das matcht z.B. "Pokémon"
+     * keinen Spiele_Titel-Eintrag, der mit "pokemon" geschrieben ist.
+     */
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/\+/g, ' + ')
     .replace(/[()[\],;:]/g, ' ')
     .replace(/\s+/g, ' ')
