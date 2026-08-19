@@ -1255,9 +1255,41 @@ const boseSoloMatch = searchName.match(
 if (boseSoloMatch) {
   return `BOSE SOLO ${boseSoloMatch[1]}`;
 }
+
+if (
+  /\bbose\s+portable\s+(?:home\s+)?(?:smart\s+)?speaker\b/.test(searchName)
+) {
+  return 'BOSE PORTABLE SMART SPEAKER';
+}
+
+const boseRevolveMatch = searchName.match(
+  /\bbose\s+revolve(?:\s+(plus))?\s*(ii|i|2|1)?\b/
+);
+
+if (boseRevolveMatch) {
+  return [
+    'BOSE REVOLVE',
+    boseRevolveMatch[1] ? 'PLUS' : '',
+    boseRevolveMatch[2]
+      ? boseRevolveMatch[2].toUpperCase().replace('2', 'II').replace(/^I$/, 'I')
+      : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+  /*
+   * Zwischen "Bose" und der eigentlichen Produktlinie steht in der
+   * Praxis oft eine Artikel-/Modellnummer ("Bose 767520-2100
+   * Soundtouch 300 ..."). Ein optionales einzelnes Token deckt das ab,
+   * ohne bei mehreren gebündelten Produkten in derselben Zeile zu
+   * weit über die Grenze zum nächsten Produkt zu greifen. Ein
+   * optionales Anführungszeichen um die Modellnummer wird toleriert
+   * (z.B. Soundtouch "300").
+   */
   const boseModelMatch =
     searchName.match(
-      /\bbose\s+(soundlink|quietcomfort|soundtouch)\s*([a-z0-9-]+)?\b/
+      /\bbose\s+(?:\S+\s+)?(soundlink|quietcomfort|soundtouch)\s*"?([a-z0-9-]+)?"?\b/
     );
 
   if (boseModelMatch) {
