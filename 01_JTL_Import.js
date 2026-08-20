@@ -136,6 +136,9 @@ function importSingleFile_(file, rawSheet, logSheet, errorSheet) {
   const grossSalesPriceSourceIndex =
     columnIndexes[normalizeHeader_('Brutto-VK')];
 
+  const currencySourceIndex =
+    columnIndexes[normalizeHeader_('Währung')];
+
   dataRows.forEach((sourceRow, relativeIndex) => {
     if (isEmptyRow_(sourceRow)) {
       return;
@@ -155,9 +158,29 @@ function importSingleFile_(file, rawSheet, logSheet, errorSheet) {
       sourceRow[quantitySourceIndex]
     );
 
-    const unitGrossSalesPrice = parseGermanNumber_(
+    const rawUnitGrossSalesPrice = parseGermanNumber_(
       sourceRow[grossSalesPriceSourceIndex]
     );
+
+    /*
+     * Brutto-VK steht im Rohexport in der jeweiligen Original-Waehrung
+     * (siehe EXPECTED_HEADERS/Waehrung). Einzel-VK/Gesamtumsatz werden
+     * hier bereits nach EUR umgerechnet, weil Tagesprofite bevorzugt
+     * diese abgeleiteten Spalten liest - Brutto-VK selbst bleibt
+     * unveraendert zur Nachvollziehbarkeit stehen.
+     */
+    const currencyCode =
+      currencySourceIndex !== undefined
+        ? cleanCellValue_(sourceRow[currencySourceIndex]).toUpperCase()
+        : '';
+
+    const exchangeRate =
+      CONFIG.CURRENCY_RATES_TO_EUR[currencyCode] || 1;
+
+    const unitGrossSalesPrice =
+      rawUnitGrossSalesPrice !== null
+        ? Math.round((rawUnitGrossSalesPrice * exchangeRate + Number.EPSILON) * 100) / 100
+        : null;
 
     /*
      * Vorläufige fachliche Annahme:

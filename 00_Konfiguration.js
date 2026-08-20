@@ -27,8 +27,23 @@ const CONFIG = Object.freeze({
     'Bezeichnung (Position)',
     'Positionsart',
     'Menge',
-    'Brutto-VK'
+    'Brutto-VK',
+    'Währung'
   ],
+
+  /*
+   * Fester Näherungskurs zu EUR (MVP-Vereinfachung, kein tagesaktueller
+   * Kurs). Brutto-VK steht in JTL_Rohdaten unveraendert in der
+   * Original-Waehrung; Einzel-VK/Gesamtumsatz werden beim Import damit
+   * nach EUR umgerechnet, da Tagesprofite bevorzugt diese Spalten liest.
+   * Fehlt die Waehrungsspalte (aeltere Exports) oder ist der Wert leer/
+   * unbekannt, wird wie bisher 1:1 als EUR behandelt.
+   */
+  CURRENCY_RATES_TO_EUR: {
+    EUR: 1,
+    SEK: 0.088,
+    GBP: 1.15
+  },
 
   TECHNICAL_HEADERS: [
     'Importzeitpunkt',
