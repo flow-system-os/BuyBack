@@ -918,6 +918,69 @@ function testeDriveOrdner() {
 
 
 /**
+ * Einmalige Migration: fügt die neue Spalte "Währung" in das bereits
+ * befüllte Tabellenblatt "JTL_Rohdaten" ein, direkt nach "Brutto-VK".
+ *
+ * Ohne diese Spalte bricht der nächste Import ab (siehe
+ * validateOutputStructure_/ensureHeaderRow_ - beide prüfen die
+ * Kopfzeile strikt gegen CONFIG.EXPECTED_HEADERS, das "Währung" jetzt
+ * enthält). Bestehende Zeilen bleiben in der neuen Spalte leer -
+ * das entspricht dem bisherigen Verhalten (unbekannte/leere Währung
+ * wird beim Import 1:1 als EUR behandelt, siehe CONFIG.CURRENCY_RATES_TO_EUR).
+ *
+ * Einmal ausführen, danach nicht mehr nötig - kann gefahrlos mehrfach
+ * aufgerufen werden (bricht ohne Änderung ab, falls die Spalte schon
+ * existiert).
+ */
+function fuegeWaehrungsSpalteInJtlRohdatenEin() {
+  const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+  const rawSheet = getRequiredSheet_(
+    spreadsheet,
+    CONFIG.RAW_SHEET_NAME
+  );
+
+  const lastColumn = rawSheet.getLastColumn();
+
+  const headerRow = rawSheet
+    .getRange(1, 1, 1, lastColumn)
+    .getValues()[0]
+    .map(value => String(value).trim());
+
+  if (headerRow.includes('Währung')) {
+    console.log(
+      'Spalte "Währung" ist bereits vorhanden, keine Änderung vorgenommen.'
+    );
+    return;
+  }
+
+  const grossVkColumnIndex = headerRow.indexOf('Brutto-VK');
+
+  if (grossVkColumnIndex === -1) {
+    throw new Error(
+      'Spalte "Brutto-VK" wurde in "JTL_Rohdaten" nicht gefunden - ' +
+      'Abbruch, keine Änderung vorgenommen.'
+    );
+  }
+
+  const newColumnNumber = grossVkColumnIndex + 2;
+
+  rawSheet.insertColumnAfter(grossVkColumnIndex + 1);
+
+  rawSheet
+    .getRange(1, newColumnNumber)
+    .setValue('Währung')
+    .setFontWeight('bold');
+
+  console.log(
+    `Spalte "Währung" wurde an Position ${newColumnNumber} eingefügt ` +
+    '(direkt nach "Brutto-VK"). Bestehende Zeilen bleiben dort leer ' +
+    'und werden weiterhin wie EUR behandelt.'
+  );
+}
+
+
+/**
  * Wandelt deutsche und internationale Zahlenformate sicher um.
  *
  * Beispiele:
