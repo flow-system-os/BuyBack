@@ -52,9 +52,20 @@ Das ist bewusst **eine** Funktion, kein Duplikat pro Seite: jede neue Normalisie
 
 Alle vier sind reine Funktionen ohne Spreadsheet-Zugriff — sie lassen sich 1:1 in ein anderes Apps-Script-Projekt kopieren oder (wie bei der Fehlersuche in diesem Projekt praktiziert) in einer lokalen Node-Umgebung offline testen, ohne gegen die echten Sheets laufen zu müssen.
 
-## 4. Aktueller Stand (Stand: 2026-08-10)
+## 4. Aktueller Stand (Stand: 2026-08-27)
 
-Letzter vollständiger Lauf nach allen unten dokumentierten Fixes **und** der Zusammenführung der bekannten Produktstamm-Duplikate: **8.692 von 9.824 Verkaufszeilen automatisch erfolgreich zugeordnet (88,5 %)**, 1.132 Prüffälle, 9.131 Versand-/Nicht-Produktzeilen automatisch übersprungen. Zum Vergleich: der Ausgangswert vor dieser Fix-Runde lag bei 78,7 % (7.729/9.824) — die Verbesserung von knapp 10 Prozentpunkten geht überwiegend auf die Zusammenführung von 9 doppelten Produktstamm-Einträgen zurück (siehe Abschnitt 6), nicht auf einzelne Parser-Regex-Fixes.
+Nach Einspielen des vollständigen Jahresexports (Januar bis Mitte August 2026, inkl. Währungsspalte für SEK/GBP-Verkäufe): **18.566 von 21.252 Verkaufszeilen automatisch erfolgreich zugeordnet (87,4 %)**, 2.686 Prüffälle, 19.791 Versand-/Nicht-Produktzeilen automatisch übersprungen. Die Quote liegt auf ähnlichem Niveau wie beim letzten kleineren Datensatz (siehe Tabelle unten) — der große Sprung in den absoluten Zahlen kommt vom deutlich größeren, jetzt vollständigen Zeitraum, nicht von einer Verschlechterung.
+
+Zwischenzeitliche Werte auf dem kleineren Datensatz (~9.800 Zeilen, vor dem Jahresexport), zur Einordnung der Fix-Wirkung:
+
+| Zeitpunkt | Erfolgreich | Prüffälle | Quote |
+|---|---|---|---|
+| Ausgangswert (vor 2026-08-04) | 7.729 | 2.095 | 78,7 % |
+| Nach Produktstamm-Duplikate-Zusammenführung (2026-08-10) | 8.692 | 1.132 | 88,5 % |
+| Nach Konsolen-/Spiele-Sicherheitsfix + Spiele_Titel-Umstellung (2026-08-18) | 8.698 | 1.126 | 88,6 % |
+| Nach Kamera-/Bose-/Normalisierungs-Fixes (2026-08-20) | 8.667 | 1.157 | 88,2 % |
+| Nach PS5-Slim-Produktstamm-Bereinigung (2026-08-24) | 8.601 | 1.223 | 87,6 % (Anstieg vermutlich durch aufgedeckte, vorher stille Fehlzuordnungen — siehe Prinzip "Silent wrong match ist schlimmer als ein Prüffall" in CLAUDE.md) |
+| **Jahresexport, Währung korrigiert (2026-08-27)** | **18.566** | **2.686** | **87,4 %** |
 
 Verlauf zur Einordnung:
 
@@ -90,6 +101,24 @@ Alle Änderungen wurden vor dem Livegang offline gegen echte Beispieldaten getes
 9. **Zwei Bugs im täglichen Hauptlauf** behoben: ein Schritt rief eine nicht existierende Funktion auf (brach den ganzen Lauf vor der Gewinnberechnung ab), und es gab zwei widersprüchliche Definitionen der Start-Funktion.
 10. **Timeout bei `BBP2_aktualisiereTagesprofite`**: bestehende Verkaufszeilen wurden einzeln, eine nach der anderen, ins Sheet zurückgeschrieben (ein `setValues()`-Aufruf pro Zeile). Bei fast 10.000 Zeilen führte das zu "Service Spreadsheets timed out". Jetzt werden bestehende Zeilen gebündelt in einem Lese-/Schreibzugriff aktualisiert, genau wie neue Zeilen es schon vorher waren.
 
+## 5a. Änderungshistorie (2026-08-18 bis 2026-08-27)
+
+Fortsetzung von Abschnitt 5, gleiche Vorgehensweise (offline gegen echte Daten getestet vor jedem Push).
+
+**Juli-Profitvalidierung deckte zwei systemische Fehler auf (2026-08-18):**
+1. Einzeln verkaufte Spiele/Zubehör mit Konsolen-Wort im Titel (z. B. "Mario + Rabbids... Nintendo Switch") bekamen den EK der ganzen Konsole zugewiesen — `salesDetectConsoleCategory_` und `ekExtractModelKey_` erkannten Nintendo Switch/Xbox Series schon bei bloßer Erwähnung, ohne Speichergröße oder Position als Hauptprodukt zu prüfen. Gefixt: beide Stellen verlangen jetzt Speicherangabe oder Position am Textanfang, analog zu PS4/PS5.
+2. Schwedische (SEK) und britische (GBP) Verkäufe wurden mangels Währungsspalte im Rohexport 1:1 als EUR behandelt (z. B. eine PS5 für 5.554,85 SEK erschien als 5.554,85 €). Behoben 2026-08-27, siehe eigener Punkt unten.
+
+**Spiele-Erkennung von fester Code-Liste auf Tabellenblatt umgestellt** (`Spiele_Titel`, selbst pflegbar durch Annika/Team, keine Code-Änderung mehr nötig für neue Titel) — ersetzt die in Abschnitt 7 erwähnte 7-Titel-Liste.
+
+**Weitere Modellschlüssel-/Kategorie-Fixes:** PS5 Pro/Slim ohne Zusatz, deutsches Tausendertrennzeichen ("1.650 €" wurde als 1,65 € geparst — steckte identisch in drei fast-duplizierten Preis-Parsern), Samsung-Handys ohne "Galaxy"-Wort, DualSense/DualShock ohne das Wort "Controller", Kategorie-Fälle ohne Marken-Präfix ("Switch 32GB"), Canon-IS-Suffix (analog zum bereits behandelten HS-Suffix), spanisches/französisches Farb-/Kategoriewort, Bose-Erkennung (SoundTouch mit Artikelnummer dazwischen, Revolve, Portable Smart Speaker), drei Kamera-Modellschlüssel-Muster (Lumix-DMC-Präfix, Sony-HX-Suffixbuchstabe, Canon-G-Leerzeichen — behebt Fälle, in denen ein mitverkauftes Objektiv den Kamera-Schlüssel überschrieb), SanDisk-Speicherkarten (lieferten vorher die UHS-Geschwindigkeitsklasse "V60" statt eines Modellnamens).
+
+**Generalisierte Normalisierungs-Fixes** (wirken auf alle Kategorien, nicht nur Einzelfälle): typografische Apostroph-Varianten (’ vs. ') vereinheitlicht, Akzentzeichen (Pokémon → Pokemon) per NFD-Normalisierung entfernt, Bindestriche bei der Spiele-Erkennung wie Leerzeichen behandelt ("Hunter-Call of The Wild-Edition").
+
+**PS5-Slim-Produktstamm-Duplikat** (500GB-Variante existiert real nicht, Kanonisierung fasst sie ohnehin auf 1TB zusammen) über den bestehenden `Produkt_Zusammenführung`-Mechanismus bereinigt (siehe Abschnitt 6).
+
+**Währungsumrechnung SEK/GBP → EUR** (2026-08-27): `EXPECTED_HEADERS` um "Währung" ergänzt, `01_JTL_Import.js` rechnet `Einzel-VK`/`Gesamtumsatz` mit einem festen Näherungskurs (`CONFIG.CURRENCY_RATES_TO_EUR` in [00_Konfiguration.js](00_Konfiguration.js)) in EUR um, `Brutto-VK` bleibt zur Nachvollziehbarkeit in der Originalwährung stehen. Kein tagesaktueller Kurs — bewusste MVP-Vereinfachung. Live verifiziert an den ursprünglich gemeldeten Anomalien (z. B. 6.065,63 SEK → korrekt 533,78 € statt vorher fälschlich 6.065,63 €). Einmalige Migrationsfunktion `fuegeWaehrungsSpalteInJtlRohdatenEin()` fügt die neue Spalte sicher in ein bereits befülltes `JTL_Rohdaten`-Sheet ein.
+
 ## 6. Produktstamm-Duplikate — Root Cause gefunden, 9 bekannte Fälle bereits zusammengeführt
 
 Root Cause: Die Kandidatensuche beim Verkaufs-Mapping kanonisiert Produktstamm-Einträge beim Indizieren (erkennt z. B. "A6000" und "ALPHA 6000" korrekt als dasselbe Modell). Das Anlegen neuer Produkte (`synchronisiereProduktstamm`) tat das bis 2026-08-08 nicht — bei einer Änderung der Schreibweise (z. B. durch einen Parser-Fix) wurde dadurch ein doppelter Produktstamm-Eintrag angelegt statt der bestehende erkannt. Ursache jetzt behoben (beide Stellen kanonisieren jetzt gleich), sodass **keine neuen Duplikate dieser Art mehr entstehen**.
@@ -101,11 +130,18 @@ Die zum Zeitpunkt der Analyse bekannten 9 Duplikat-Paare (u. a. PS4 Pro 500GB/1T
 
 Diese 9 Zusammenführungen betrafen zusammen 272 Alias-Zeilen und erklären den Großteil des Sprungs von 78,0 % auf 88,5 % in Abschnitt 4.
 
+**Zweiter, einfacherer Mechanismus für einzelne, bereits eindeutig bestätigte Fälle:** `bereinigeAktuelleDoppelprodukteSicher()` (ebenfalls in [06_Produkt_Zusammenfuehrung.js](06_Produkt_Zusammenfuehrung.js)) — eine fest im Code hinterlegte Liste (`merges`-Array direkt in der Funktion) statt eines Sheet-Workflows. Gedacht für Fälle, bei denen die Zusammenführung schon im Code-Review bestätigt wurde (z. B. PS5 Slim 500GB, das laut Hardware-Fakten real nicht existiert). Idempotent, kann gefahrlos mehrfach ausgeführt werden. Neue Fälle werden als weiterer Eintrag im `merges`-Array ergänzt.
+
 **Bemerkenswert:** Es existiert bereits ein automatischer Vorschlagsmechanismus ("globaler Produktstammvergleich"), der weitere Kandidaten mit Status `VORSCHLAG` (nicht freigegeben) in dasselbe Tabellenblatt einträgt — Fundort/Auslöser dieses Mechanismus wurde in dieser Runde noch nicht untersucht. Vorsicht bei diesen automatischen Vorschlägen: mindestens einer der beobachteten Vorschläge ("Galaxy Tab A9+" → "Galaxy Tab A9") sieht nach einer **falschen** Zusammenführung aus — A9 und A9+ sind unterschiedliche, real existierende Samsung-Modelle, keine Schreibweisen desselben Geräts. Automatische Vorschläge dieses Mechanismus sollten vor der Freigabe geprüft werden, nicht blind übernommen.
 
-## 7. Bekannte, bewusst nicht behobene Punkte
+## 7. Bekannte, bewusst nicht behobene Punkte (Stand 2026-08-27)
 
 - **Modellschlüssel-Namensraum ohne Marken-Präfix**: Schlüssel wie "5000" statt "SONY_ALPHA_5000" sind grundsätzlich kollisionsanfällig. Eine durchgängige Umstellung wurde als sinnvoll bewertet, aber als größerer, risikoreicherer Umbau zurückgestellt (betrifft den gesamten Produktstamm-Namensraum).
 - **Nintendo Joy-Con/Pro-Controller "ohne Hauptgerät"**: dieselbe Fehlerklasse wie Punkt 3 in Abschnitt 5, aber für Nintendo strukturell anders (Kategorie kommt vom Quell-Tabellenblatt, nicht aus dem Text) — noch nicht untersucht.
-- **Großhändler-Einkäufe ohne EK-Daten** (z. B. Zubehör, das nicht im Einkaufs-Sheet steht): Mechanismus noch nicht entworfen, wartet auf Entscheidung zur Zuordnungsart (exakter Produkttext vs. manuell vergebener Schlüssel).
-- **Spiele-Erkennung**: aktuell eine feste Liste von 7 Titeln im Code (`salesIsVideoGame_`). Kein zuverlässigeres Signal in den JTL-Daten gefunden (weder Positionsart noch Artikelnummern-Muster).
+- **Großhändler-Einkäufe ohne EK-Daten**: Mechanismus existiert seit 2026-08-14 (`GROSSHAENDLER_EK`-Regeltyp in `EK_Regeln`, Schlüssel = erkannter Modellschlüssel). Wichtige strukturelle Einschränkung: die Regel wird erst geprüft, *nachdem* ein Modellschlüssel erkannt wurde — für Produkte ohne jede Erkennung kann eine korrekt eingetragene Regel trotzdem nie greifen (betraf z. B. SanDisk-Speicherkarten, bis dafür ein eigenes Modellschlüssel-Muster ergänzt wurde, siehe Abschnitt 5a).
+- **Kamera/Objektiv-Kategorie — größter Einzelposten unter den Prüffällen, aber überwiegend Datenlücke, kein Parser-Bug**: Root-Cause-Analyse (2026-08-19/20) zeigt, dass der Parser in den meisten offenen Fällen bereits einen sauberen, korrekten Modellschlüssel liefert — es gibt trotzdem keinen Treffer, weil das jeweilige Modell im Produktstamm/den Einkaufsdaten schlicht fehlt. Offene Entscheidung bei Annika: gezieltes Nachtragen der fehlenden Modelle lohnt sich oder nicht.
+- **497 Produktnamen-Varianten → nur 2 aktive Produkte** (Fund von Syed, 2026-08-14): vermutlich der größte verbleibende Hebel für die Prüffälle-Reduktion, aber ohne Syeds konkrete Liste oder einen frischen Produktstamm-Export nicht sinnvoll angehbar.
+- **Kleinere, noch nicht einzeln untersuchte Punkte** (aus Syeds Audit): 2 Verkäufe zeigen auf stillgelegte/zusammengeführte Produkt-IDs, 17 doppelte Auftragszeilen, 1 Fall mit Postleitzahl statt Preis, 8 Controller-Käufe mit EK=0€, PS5-Kopfhörer teils als Konsole gematcht, eine Nintendo-Switch-TV-Docking-Station wird wie eine Konsole behandelt (Zubehör-Fall, gleiche Fehlerklasse wie ein bereits gefixter Switch-Dock-Fall).
+- **Mixed-Bundle-Erkennung nur markenübergreifend**: `ekContainsMixedMainProducts_` erkennt Kombinationen wie PS4+Xbox, aber nicht mehrere unterschiedliche Modelle derselben Marke in einer Zeile (z. B. drei verschiedene Sony-Kameras in einem Kauf) — der gesamte Preis würde dann fälschlich einem einzigen erkannten Modell zugeordnet.
+- **Mengen-Erkennung beim Einkauf fehlt für das Hauptprodukt**: bei Sammel-Einkäufen ("11x Nintendo 3DS XL, 1.650€") wird der Gesamtpreis aktuell als Einzelpreis behandelt (es gibt nur ein Mengenfeld für Controller-Zubehör, keins fürs Hauptprodukt) — verzerrt den Durchschnitts-EK. Direkt relevant für eine mögliche künftige strukturierte Dateneingabe (separate Mengen-Spalte würde das beheben).
+- **Spiele-Erkennung**: seit 2026-08-18 ein selbst pflegbares Tabellenblatt (`Spiele_Titel`) statt fester Code-Liste, siehe Abschnitt 5a. Ersetzt den früheren Stand mit 7 fest im Code hinterlegten Titeln.
