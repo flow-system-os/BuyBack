@@ -31,6 +31,35 @@ function taeglicherBuyBackDatenlauf() {
       synchronisiereVerkaufsMapping
     );
 
+    /*
+     * Inventar-Mapping direkt nach dem Verkaufs-Mapping: es verwendet
+     * dessen frische Ergebnisse (bereits verkaufte Artikel sind schon
+     * gemappt) und schreibt in eigene Blaetter (Inventar_Mapping,
+     * Inventar_Bestand). Faellt der Schritt aus - z.B. weil noch keine
+     * Artikelstammdaten-CSV in "Inventar_Rohdaten" liegt -, laeuft der
+     * restliche Datenlauf trotzdem weiter.
+     */
+    try {
+      hauptlaufFuehreSchrittAus_(
+        ergebnisse,
+        'Inventar-Mapping synchronisieren',
+        synchronisiereInventarMapping
+      );
+    } catch (inventarFehler) {
+      console.error(
+        'Inventar-Mapping uebersprungen: ' +
+        (inventarFehler && inventarFehler.message
+          ? inventarFehler.message
+          : String(inventarFehler))
+      );
+      ergebnisse.push({
+        schritt: 'Inventar-Mapping synchronisieren',
+        status: 'UEBERSPRUNGEN',
+        dauerSekunden: 0,
+        rueckgabe: null
+      });
+    }
+
     hauptlaufFuehreSchrittAus_(
       ergebnisse,
       'Tagesprofite aktualisieren',

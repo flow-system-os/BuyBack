@@ -26,6 +26,8 @@ EK_Normalisiert            Verkaufs_Mapping (Produkt-ID)
 - **Verkaufsseite**: `JTL-Bezeichnung → Verkaufs_Mapping → Produkt-ID → Modellschlüssel via Produktstamm`
 - Beide Seiten laufen unabhängig durch eigene Parser-Regeln, treffen sich aber **ausschließlich über den Modellschlüssel**. Das ist die zentrale Kopplungsstelle im ganzen System — jeder Fehler dort pflanzt sich in jeden nachgelagerten Abgleich fort.
 
+**Dritte Eingabe (Inventar):** `12_Inventar_Mapping.js` liest zusätzlich den JTL-Artikelstammdaten-Export (Lagerbestand) und ordnet jede Bestandszeile mit **denselben** Verkaufs-Parser-Funktionen einer Produkt-ID zu → `Inventar_Bestand` (Bestand je Produkt-ID, für die Purchase Engine). Details siehe Abschnitt 8.
+
 ## 2. Kernkomponenten des Parsers
 
 | Datei | Zuständig für |
@@ -37,6 +39,7 @@ EK_Normalisiert            Verkaufs_Mapping (Produkt-ID)
 | [05_Produktstamm.js](05_Produktstamm.js) | Legt neue Produkte aus `EK_Normalisiert` an, pflegt Aliase |
 | [00_Tagesprofite.js](00_Tagesprofite.js) | EK-Auswahl je Modellschlüssel (letzte 3 Einkäufe/2 Monate), Gewinnberechnung, Fest-EK-Regeln |
 | [04_EK_Regeln_und_Hilfen.js](04_EK_Regeln_und_Hilfen.js) | Liest `EK_Regeln`-Tabellenblatt (Controller-Festpreise, Standard-Speichergrößen) — **einzige Quelle**, kein Code-Fallback |
+| [12_Inventar_Mapping.js](12_Inventar_Mapping.js) | Dritte Eingabe: JTL-Lagerbestand (Artikelstammdaten) → Produkt-ID über die bestehenden Verkaufs-Parser-Funktionen; Bestandsrollup je Produkt-ID (`Inventar_Bestand`); Schutzprüfungen gegen stille Fehlzuordnungen (Abschnitt 8). Tests: [test_inventar_mapping.js](test_inventar_mapping.js) |
 
 ## 3. Design-Prinzip: eine gemeinsame Kanonisierung für beide Seiten
 
@@ -145,3 +148,62 @@ Diese 9 Zusammenführungen betrafen zusammen 272 Alias-Zeilen und erklären den 
 - **Mixed-Bundle-Erkennung nur markenübergreifend**: `ekContainsMixedMainProducts_` erkennt Kombinationen wie PS4+Xbox, aber nicht mehrere unterschiedliche Modelle derselben Marke in einer Zeile (z. B. drei verschiedene Sony-Kameras in einem Kauf) — der gesamte Preis würde dann fälschlich einem einzigen erkannten Modell zugeordnet.
 - **Mengen-Erkennung beim Einkauf fehlt für das Hauptprodukt**: bei Sammel-Einkäufen ("11x Nintendo 3DS XL, 1.650€") wird der Gesamtpreis aktuell als Einzelpreis behandelt (es gibt nur ein Mengenfeld für Controller-Zubehör, keins fürs Hauptprodukt) — verzerrt den Durchschnitts-EK. Direkt relevant für eine mögliche künftige strukturierte Dateneingabe (separate Mengen-Spalte würde das beheben).
 - **Spiele-Erkennung**: seit 2026-08-18 ein selbst pflegbares Tabellenblatt (`Spiele_Titel`) statt fester Code-Liste, siehe Abschnitt 5a. Ersetzt den früheren Stand mit 7 fest im Code hinterlegten Titeln.
+
+## 8. Inventar-Parser: JTL-Lagerbestand → Produkt-ID 
+
+**Zweck.** Der Verkaufs-Parser verbindet jede *verkaufte* JTL-Artikelnummer mit einer Produkt-ID, der Einkaufs-Parser jede Einkaufszeile über den Modellschlüssel. Es fehlte die dritte Seite: der **aktuelle Lagerbestand je Produkt-ID**. `12_Inventar_Mapping.js` liest den JTL-Artikelstammdaten-Export (Tabellenblatt `Inventar_Rohdaten`), ordnet jede Zeile einer Produkt-ID zu — **ausschließlich mit den bestehenden Verkaufs-Parser-Funktionen, keine neue Erkennungslogik** — und schreibt zwei eigene Blätter:
+
+- `Inventar_Mapping` — eine Zeile je SKU (Basis-Artikelnummer, Zustand, erkannte Produkt-ID, Join-Quelle, Bemerkung)
+- `Inventar_Bestand` — Bestand (`Verfügbar` / `Auf Lager` / `In Aufträgen`) je Produkt-ID, für die Purchase Engine
+
+### Zuordnungs-Reihenfolge je Inventarzeile (`inventarZuordneProdukt_`)
+
+0. Bestehendes `Verkaufs_Mapping` für die Basis-SKU wiederverwenden — **mit Namens-Konsistenzprüfung** (siehe unten)
+1. Alias auf den Artikelnamen (`Produkt_Alias`)
+2. Videospiel-Titelliste (`Spiele_Titel`) → `SPIELE` (aus dem Bestand raus)
+3. Generischer Spielkontext ("(Sony PlayStation 4, 2016)", "[PS4]", "pegi") → `SPIELE`
+4. Controller-Sonderregel
+5. Modellschlüssel-Erkennung (`salesExtractModelKey_`)
+6. Großhändler-EK-Sonderregel (`GROSSHAENDLER_EK`)
+7. Kandidatensuche im aktiven Produktstamm (Kategorie + Modell, dann Modell allein) — **mit Schutzprüfungen** (siehe unten)
+
+Nach jeder Zuordnung: `inventarFolgeMergeUndAktiv_` folgt einer ausgeführten Zusammenführung (`Produkt_Zusammenführung`) und lässt keine Zuordnung auf einer inaktiven Produkt-ID stehen.
+
+### Live-Validierung auf dem echten Sheet
+
+- 6.459 Zeilen geprüft (alle, keine Stichprobe)
+- 3.174 stimmten mit einem tatsächlichen Produkt überein → 2 Fehler, beide mit 0 Stück auf Lager → ~99,94 % Genauigkeit
+- 0 doppelt gezählte Produkte (alle 251 Gesamtzahlen von Hand geprüft)
+- 1.431 korrekt als Spiele/Controller aussortiert (nicht als Lagerbestand gezählt)
+- 1.765 wurden bewusst nicht zugeordnet, weil:
+  - 1.307 – es wurde erkannt, um was es sich handelt, aber ein solches Produkt ist noch nicht im Katalog vorhanden (meist 0 auf Lager, aber 77 davon haben tatsächlich Lagerbestand)      
+  - 218 – Artikeltyp, den der Parser überhaupt nicht erkennen kann (30 haben tatsächlich Lagerbestand)
+  - 200 – es wurde zu Recht vermieden, anzunehmen, es handele sich um eine komplette Konsole (39 davon sind tatsächlich vorrätig)
+  - 40 – die Sicherheitsprüfung hat einen veralteten Datensatz abgelehnt und nichts Besseres gefunden (4 davon sind tatsächlich vorrätig)
+- 150 Zeilen / 841 Einheiten aus diesem nicht zugeordneten Stapel sind tatsächlich noch vorrätig – es handelt sich um eine Lücke in der Abdeckung (fehlende Katalogeinträge / nicht erkannte Artikeltypen), nicht um ein Problem mit falscher Zuordnung
+
+## 9. So führt man es in Apps Script aus (kurz erklärt)
+
+**1. Code hochladen:** im Projektordner `clasp push -f`.
+
+**2. Einmaliger Aufbau** (nur nötig, wenn `Produktstamm`/`EK_Normalisiert` noch leer sind — sonst direkt zu Schritt 3). Jede Funktion einzeln im Apps-Script-Editor über das Funktions-Dropdown oben + den ▶-Button starten; `clasp run-function` funktioniert für dieses Projekt nicht zuverlässig (siehe CLAUDE.md):
+
+1. `aktualisiereNeueUndGeaenderteEinkaeufe()` — baut `EK_Normalisiert` aus den Einkaufsdaten
+2. `synchronisiereProduktstamm()` — baut daraus `Produktstamm` und `Produkt_Alias`
+
+**3. Normaler Tageslauf** — entweder alles auf einmal:
+
+- `taeglicherBuyBackDatenlauf()` ([99_Hauptlauf.js](99_Hauptlauf.js)) — importiert neue JTL-Verkaufs-CSVs, gleicht Verkäufe ab, gleicht Inventar ab, berechnet Tagesprofite, alles hintereinander
+
+— oder einzeln, in genau dieser Reihenfolge (z. B. um gezielt einen Schritt zu testen):
+
+1. `importiereNeueJtlDateien()` — nur falls eine neue Verkaufs-CSV im Drive-Ordner liegt
+2. `synchronisiereVerkaufsMapping()`
+3. `synchronisiereInventarMapping()` — braucht vorher Daten in `Inventar_Rohdaten` (siehe unten)
+4. `BBP2_aktualisiereTagesprofite()`
+
+**4. `Inventar_Rohdaten` befüllen** (für Schritt 3 oben): entweder die JTL-Artikelstammdaten-CSV manuell in dieses Tabellenblatt einfügen (**Datei → Import → Aktuelles Blatt ersetzen**), oder `INVENTAR_MAPPING_CONFIG.DRIVE_FOLDER_ID` in [12_Inventar_Mapping.js](12_Inventar_Mapping.js) auf einen Drive-Ordner setzen und `importiereInventarStammdaten()` ausführen. **Wichtig:** dafür einen eigenen Ordner nehmen, nicht denselben wie für die Verkaufs-CSVs (`CONFIG.DRIVE_FOLDER_ID` in [00_Konfiguration.js](00_Konfiguration.js)) — sonst versucht jeder Import auch die Datei des jeweils anderen zu lesen und scheitert daran (sauber, mit Fehlermeldung, aber unnötig verwirrend).
+
+**5. Ergebnis ansehen:**
+- **Im Apps-Script-Editor:** unten erscheint das Ausführungsprotokoll (die `console.log`-Zeilen) — alternativ `clasp logs` im Terminal.
+- **Im Sheet:** die eigentlichen Ergebnisse stehen nie in Apps Script selbst, sondern in den Tabellenblättern — `Verkaufs_Mapping`, `Produktstamm`, `Inventar_Mapping`, `Inventar_Bestand`, `Tagesprofite` usw. Sheet-Tab öffnen bzw. neu laden, dort nachsehen.
