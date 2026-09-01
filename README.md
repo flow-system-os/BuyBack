@@ -202,7 +202,13 @@ Nach jeder Zuordnung: `inventarFolgeMergeUndAktiv_` folgt einer ausgeführten Zu
 3. `synchronisiereInventarMapping()` — braucht vorher Daten in `Inventar_Rohdaten` (siehe unten)
 4. `BBP2_aktualisiereTagesprofite()`
 
-**4. `Inventar_Rohdaten` befüllen** (für Schritt 3 oben): entweder die JTL-Artikelstammdaten-CSV manuell in dieses Tabellenblatt einfügen (**Datei → Import → Aktuelles Blatt ersetzen**), oder `INVENTAR_MAPPING_CONFIG.DRIVE_FOLDER_ID` in [12_Inventar_Mapping.js](12_Inventar_Mapping.js) auf einen Drive-Ordner setzen und `importiereInventarStammdaten()` ausführen. **Wichtig:** dafür einen eigenen Ordner nehmen, nicht denselben wie für die Verkaufs-CSVs (`CONFIG.DRIVE_FOLDER_ID` in [00_Konfiguration.js](00_Konfiguration.js)) — sonst versucht jeder Import auch die Datei des jeweils anderen zu lesen und scheitert daran (sauber, mit Fehlermeldung, aber unnötig verwirrend).
+**4. `Inventar_Rohdaten` befüllen** (für Schritt 3 oben) — zwei Wege:
+
+- **Über einen Drive-Ordner:**
+  1. Die JTL-Artikelstammdaten-CSV in genau diesen Drive-Ordner hochladen.
+  2. Danach `importiereInventarStammdaten()` ausführen — sie holt sich automatisch die neueste CSV aus diesem Ordner und füllt `Inventar_Rohdaten`.
+
+  **Wichtig:** dafür einen eigenen Ordner nehmen, nicht denselben wie für die Verkaufs-CSVs (`CONFIG.DRIVE_FOLDER_ID` in [00_Konfiguration.js](00_Konfiguration.js)) — sonst versucht jeder Import auch die Datei des jeweils anderen zu lesen und scheitert daran (sauber, mit Fehlermeldung, aber unnötig verwirrend).
 
 **5. Ergebnis ansehen:**
 - **Im Apps-Script-Editor:** unten erscheint das Ausführungsprotokoll (die `console.log`-Zeilen) — alternativ `clasp logs` im Terminal.
